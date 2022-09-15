@@ -1,0 +1,21 @@
+docker run -p 7474:7474 -p 7687:7687 -d \
+    -v $HOME/neo4j/data:/data \
+    -v $HOME/neo4j/logs:/logs \
+    -v $HOME/neo4j/import:/var/lib/neo4j/import \
+    -v $HOME/neo4j/plugins:/plugins \
+    --env NEO4J_AUTH=neo4j/test neo4j:latest
+
+
+we got python ORM: py2neo
+
+Cheatsheet
+https://neo4j.com/docs/cypher-refcard/current/
+
+Sandbox: several projects there are worth reviewing
+https://neo4j.com/sandbox/
+
+Graph Data Science
+https://neo4j.com/docs/graph-data-science/current/
+
+
+There is a limit in the index capabilitites of Neo4j, so maybe need to hash strings
