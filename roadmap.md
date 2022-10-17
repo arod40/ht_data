@@ -39,3 +39,6 @@ Evaluation FW:
 1-Implement streamlit labeling app
 2-Deploy app: Baylor?
 3-Implement evaluation app
+
+
+FIND TRANSFORMERS CHARBASED TRAINED ON LARGE VOCAB (EMOJIS, CHINESE, LATIN) ---> MULTILINGUAL??

@@ -1,0 +1,36 @@
+version: '3'
+services:
+  db:
+    image: "postgres:latest"
+    ports:
+      - "5432:5432"
+    volumes:
+      - "dbdata:/var/lib/postgresql/data"
+    env_file:
+      - .env
+    networks:
+      - db_nw
+  flaskapp:
+    image: tagger-server:latest
+    env_file:
+      - .env
+    networks:
+      - db_nw
+      - web_nw
+    depends_on:
+      - db
+  nginx:
+    image: "nginx:latest"
+    ports:
+      - "8080:80"
+    networks:
+      - web_nw
+    depends_on:
+      - flaskapp
+networks:
+  db_nw:
+    driver: bridge
+  web_nw:
+    driver: bridge
+volumes:
+  dbdata:
