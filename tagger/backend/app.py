@@ -184,6 +184,26 @@ def _posts_delete(post_id):
 
     return "", 204
 
+@app.route("/post/bulk", methods=["POST"])
+def posts_bulk():
+    return _posts_bulk_create()
+
+def _posts_bulk_create():
+    posts_json_list = request.get_json()
+    posts = []
+    for post_json in posts_json_list:
+        post = Post(
+            body = post_json["body"],
+            title = post_json["title"]
+        )
+        posts.append(post)
+
+    db.session.add_all(posts)
+    db.session.commit()
+
+    return "All posts added sucessfully", 201
+
+
 
 @app.route("/annotation", methods=["GET", "POST"])
 def annotation():
