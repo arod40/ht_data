@@ -68,7 +68,10 @@ def seed():
     ann2 = Annotator(name="Rivas")
     ann3 = Annotator(name="Korn")
 
-    db.session.add_all([ann1, ann2, ann3])
+    p1 = Post(body="body1", title="title1")
+    p2 = Post(body="body2", title="title2")
+
+    db.session.add_all([ann1, ann2, ann3, p1, p2])
     db.session.commit()
 
 
@@ -105,7 +108,6 @@ def _annotators_get(annotator_id):
         return jsonify(Annotator.query.get(annotator_id))
     return jsonify(Annotator.query.all())
 
-
 def _annotators_post():
     ann_json = request.get_json()
     annotator = Annotator(
@@ -133,6 +135,54 @@ def _annotators_delete(annotator_id):
 
     return "", 204
 
+
+
+@app.route("/post", methods=["GET", "POST"], defaults={"post_id": None})
+@app.route("/post/<post_id>", methods=["GET", "PUT", "DELETE"])
+def posts(post_id=None):
+    if request.method == "GET":
+        return _posts_get(post_id)
+    elif request.method == "POST":
+        return _posts_post()
+    elif request.method == "PUT":
+        return _posts_put(post_id)
+    else:
+        return _posts_delete(post_id)
+
+
+def _posts_get(post_id):
+    if post_id is not None:
+        return jsonify(Post.query.get(post_id))
+    return jsonify(Post.query.all())
+
+def _posts_post():
+    ann_json = request.get_json()
+    post = Post(
+        body = ann_json["body"],
+        title = ann_json["title"]
+    )
+
+    db.session.add_all([post])
+    db.session.commit()
+
+    return jsonify(post), 201
+
+def _posts_put(post_id):
+    ann_json = request.get_json()
+    post = Post.query.get(post_id)
+    post.body = ann_json["body"]
+    post.title = ann_json["title"]
+
+    db.session.add_all([post])
+    db.session.commit()
+
+    return jsonify(post), 200
+
+def _posts_delete(post_id):
+    db.session.delete(Post.query.get(post_id))
+    db.session.commit()
+
+    return "", 204
 
 
 @app.route("/annotation", methods=["GET", "POST"])
