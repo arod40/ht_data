@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from email.policy import default
+from typing import Annotated
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Enum as SQLEnum
@@ -85,12 +87,17 @@ def ping():
     return "pong"
 
 
-@app.route("/annotator", methods=["GET", "POST"])
+@app.route("/annotator", methods=["GET", "POST"], defaults={"annotator_id": None})
+@app.route("/annotator/<annotator_id>", methods=["GET", "PUT", "DELETE"])
 def annotators(annotator_id=None):
     if request.method == "GET":
         return _annotators_get(annotator_id)
-    else:
+    elif request.method == "POST":
         return _annotators_post()
+    elif request.method == "PUT":
+        return _annotators_put(annotator_id)
+    else:
+        return _annotators_delete(annotator_id)
 
 
 def _annotators_get(annotator_id):
@@ -100,7 +107,32 @@ def _annotators_get(annotator_id):
 
 
 def _annotators_post():
-    pass
+    ann_json = request.get_json()
+    annotator = Annotator(
+        name = ann_json["name"]
+    )
+
+    db.session.add_all([annotator])
+    db.session.commit()
+
+    return jsonify(annotator), 201
+
+def _annotators_put(annotator_id):
+    ann_json = request.get_json()
+    annotator = Annotator.query.get(annotator_id)
+    annotator.name = ann_json["name"]
+
+    db.session.add_all([annotator])
+    db.session.commit()
+
+    return jsonify(annotator), 200
+
+def _annotators_delete(annotator_id):
+    db.session.delete(Annotator.query.get(annotator_id))
+    db.session.commit()
+
+    return "", 204
+
 
 
 @app.route("/annotation", methods=["GET", "POST"])
