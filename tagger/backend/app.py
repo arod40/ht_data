@@ -1,6 +1,4 @@
-from dataclasses import dataclass
-from email.policy import default
-from typing import Annotated
+from dataclasses import dataclass, field
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Enum as SQLEnum
@@ -31,14 +29,11 @@ class SimilarityClass(Enum):
     dissimilar = 2
 
 
-annotations = db.Table(
-    "annotations",
-    db.Column(
-        "annotator_id", db.Integer, db.ForeignKey("annotator.id"), primary_key=True
-    ),
-    db.Column("post_id", db.Integer, db.ForeignKey("post.id"), primary_key=True),
-    db.Column("value", SQLEnum(SimilarityClass)),
-)
+@dataclass
+class Annotator(db.Model):
+    id: int = db.Column(db.Integer, primary_key=True)
+    name: str = db.Column(db.String)
+    annotations = db.relationship("Annotation", back_populates="annotator")
 
 
 @dataclass
@@ -46,18 +41,27 @@ class Post(db.Model):
     id: int = db.Column(db.Integer, primary_key=True)
     title: str = db.Column(db.String)
     body: str = db.Column(db.String)
-    annotations = db.relationship(
-        "Annotator",
-        secondary=annotations,
-        lazy="subquery",
-        backref=db.backref("posts", lazy=True),
-    )
 
 
 @dataclass
-class Annotator(db.Model):
-    id: int = db.Column(db.Integer, primary_key=True)
-    name: str = db.Column(db.String)
+class Annotation(db.Model):
+    left_post_id = db.Column(db.Integer, db.ForeignKey("post.id"), primary_key=True)
+    right_post_id = db.Column(db.Integer, db.ForeignKey("post.id"), primary_key=True)
+    annotator_id = db.Column(
+        db.Integer, db.ForeignKey("annotator.id"), primary_key=True
+    )
+    value = (db.Column(SQLEnum(SimilarityClass)),)
+    left_post: Post = db.relationship(
+        "Post",
+        backref="annotations_as_left",
+        foreign_keys=[left_post_id],
+    )
+    right_post: Post = db.relationship(
+        "Post",
+        backref="annotations_as_right",
+        foreign_keys=[right_post_id],
+    )
+    annotator: Annotator = db.relationship("Annotator", back_populates="annotations")
 
 
 db.init_app(app)
@@ -70,8 +74,45 @@ def seed():
 
     p1 = Post(body="body1", title="title1")
     p2 = Post(body="body2", title="title2")
+    p3 = Post(body="body3", title="title3")
 
-    db.session.add_all([ann1, ann2, ann3, p1, p2])
+    annotation121 = Annotation()
+    annotation121.annotator = ann1
+    annotation121.left_post = p1
+    annotation121.right_post = p2
+    annotation121.value = SimilarityClass.similar
+
+    annotation231 = Annotation()
+    annotation231.annotator = ann1
+    annotation231.left_post = p2
+    annotation231.right_post = p3
+    annotation231.value = SimilarityClass.dissimilar
+
+    annotation232 = Annotation()
+    annotation232.annotator = ann2
+    annotation232.left_post = p2
+    annotation232.right_post = p3
+    annotation232.value = SimilarityClass.dissimilar
+
+    annotation132 = Annotation()
+    annotation132.annotator = ann2
+    annotation132.left_post = p1
+    annotation132.right_post = p3
+    annotation132.value = SimilarityClass.similar
+
+    db.session.add_all(
+        [
+            ann1,
+            ann2,
+            ann3,
+            p1,
+            p2,
+            annotation121,
+            annotation231,
+            annotation232,
+            annotation132,
+        ]
+    )
     db.session.commit()
 
 
@@ -108,16 +149,16 @@ def _annotators_get(annotator_id):
         return jsonify(Annotator.query.get(annotator_id))
     return jsonify(Annotator.query.all())
 
+
 def _annotators_post():
     ann_json = request.get_json()
-    annotator = Annotator(
-        name = ann_json["name"]
-    )
+    annotator = Annotator(name=ann_json["name"])
 
     db.session.add_all([annotator])
     db.session.commit()
 
     return jsonify(annotator), 201
+
 
 def _annotators_put(annotator_id):
     ann_json = request.get_json()
@@ -129,12 +170,12 @@ def _annotators_put(annotator_id):
 
     return jsonify(annotator), 200
 
+
 def _annotators_delete(annotator_id):
     db.session.delete(Annotator.query.get(annotator_id))
     db.session.commit()
 
     return "", 204
-
 
 
 @app.route("/post", methods=["GET", "POST"], defaults={"post_id": None})
@@ -155,17 +196,16 @@ def _posts_get(post_id):
         return jsonify(Post.query.get(post_id))
     return jsonify(Post.query.all())
 
+
 def _posts_post():
     ann_json = request.get_json()
-    post = Post(
-        body = ann_json["body"],
-        title = ann_json["title"]
-    )
+    post = Post(body=ann_json["body"], title=ann_json["title"])
 
     db.session.add_all([post])
     db.session.commit()
 
     return jsonify(post), 201
+
 
 def _posts_put(post_id):
     ann_json = request.get_json()
@@ -178,24 +218,24 @@ def _posts_put(post_id):
 
     return jsonify(post), 200
 
+
 def _posts_delete(post_id):
     db.session.delete(Post.query.get(post_id))
     db.session.commit()
 
     return "", 204
 
+
 @app.route("/post/bulk", methods=["POST"])
 def posts_bulk():
     return _posts_bulk_create()
+
 
 def _posts_bulk_create():
     posts_json_list = request.get_json()
     posts = []
     for post_json in posts_json_list:
-        post = Post(
-            body = post_json["body"],
-            title = post_json["title"]
-        )
+        post = Post(body=post_json["body"], title=post_json["title"])
         posts.append(post)
 
     db.session.add_all(posts)
@@ -204,21 +244,86 @@ def _posts_bulk_create():
     return "All posts added sucessfully", 201
 
 
+@app.route("/post/<post_id>/annotations", methods=["GET"])
+def post_annotations(post_id):
+    return _annotations_by_post(post_id)
 
-@app.route("/annotation", methods=["GET", "POST"])
-def annotation():
+
+def _annotations_by_post(post_id):
+    post = Post.query.get(post_id)
+    return jsonify(
+        {"as_left": post.annotations_as_left, "as_right": post.annotations_as_right}
+    )
+
+
+@app.route("/annotator/<annotator_id>/annotations", methods=["GET"])
+def annotator_annotations(annotator_id):
+    return _annotations_by_annotator(annotator_id)
+
+
+def _annotations_by_annotator(annotator_id):
+    return jsonify(Annotator.query.get(annotator_id).annotations)
+
+
+@app.route(
+    "/annotation",
+    methods=["GET", "POST"],
+    defaults={"left_post_id": None, "right_post_id": None, "annotator_id": None},
+)
+@app.route(
+    "/annotation/<left_post_id>/<right_post_id>/<annotator_id>",
+    methods=["GET", "PUT", "DELETE"],
+)
+def annotations(left_post_id=None, right_post_id=None, annotator_id=None):
     if request.method == "GET":
-        return _annotation_get()
+        return _annotations_get(left_post_id, right_post_id, annotator_id)
+    elif request.method == "POST":
+        return _annotations_post()
+    elif request.method == "PUT":
+        return _annotations_put(left_post_id, right_post_id, annotator_id)
     else:
-        return _annotation_post()
+        return _annotations_delete(left_post_id, right_post_id, annotator_id)
 
 
-def _annotation_get():
-    pass
+def _annotations_get(left_post_id, right_post_id, annotator_id):
+    if None not in [left_post_id, right_post_id, annotator_id]:
+        return jsonify(
+            Annotation.query.get((left_post_id, right_post_id, annotator_id))
+        )
+    return jsonify(Annotation.query.all())
 
 
-def _annotation_post():
-    pass
+def _annotations_post():
+    ann_json = request.get_json()
+    annotation = Annotation(
+        left_post_id=ann_json["left_post_id"],
+        right_post_id=ann_json["right_post_id"],
+        annotator_id=ann_json["annotator_id"],
+        value=SimilarityClass[ann_json["value"]],
+    )
+
+    db.session.add_all([annotation])
+    db.session.commit()
+
+    return jsonify(annotation), 201
+
+
+def _annotations_put(left_post_id, right_post_id, annotator_id):
+    ann_json = request.get_json()
+    annotation = Annotation.query.get((left_post_id, right_post_id, annotator_id))
+    annotation.value = (SimilarityClass[ann_json["value"]],)
+
+    db.session.add_all([annotation])
+    db.session.commit()
+
+    return jsonify(annotation), 200
+
+
+def _annotations_delete(left_post_id, right_post_id, annotator_id):
+    db.session.delete(Annotation.query.get((left_post_id, right_post_id, annotator_id)))
+    db.session.commit()
+
+    return "", 204
 
 
 if __name__ == "__main__":
