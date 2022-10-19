@@ -1,4 +1,5 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from dataclasses_json import dataclass_json
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Enum as SQLEnum
@@ -24,9 +25,9 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 # DB MODELS
 
 
-class SimilarityClass(Enum):
-    similar = 1
-    dissimilar = 2
+class SimilarityClass(str, Enum):
+    similar = "similar"
+    dissimilar = "dissimilar"
 
 
 @dataclass
@@ -51,7 +52,7 @@ class Annotation(db.Model):
     annotator_id = db.Column(
         db.Integer, db.ForeignKey("annotator.id"), primary_key=True
     )
-    value = (db.Column(SQLEnum(SimilarityClass)),)
+    value: SimilarityClass = db.Column(SQLEnum(SimilarityClass))
     left_post: Post = db.relationship(
         "Post",
         backref="annotations_as_left",
@@ -312,7 +313,7 @@ def _annotations_post():
 def _annotations_put(left_post_id, right_post_id, annotator_id):
     ann_json = request.get_json()
     annotation = Annotation.query.get((left_post_id, right_post_id, annotator_id))
-    annotation.value = (SimilarityClass[ann_json["value"]],)
+    annotation.value = SimilarityClass[ann_json["value"]]
 
     db.session.add_all([annotation])
     db.session.commit()
