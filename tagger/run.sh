@@ -1,5 +1,6 @@
 cd backend
 docker build -t tagger-server .
-echo y | docker image prune
+cd ../client
+docker build -t tagger-client .
 cd ..
 docker compose up

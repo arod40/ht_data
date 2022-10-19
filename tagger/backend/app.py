@@ -39,6 +39,7 @@ class Annotator(db.Model):
 @dataclass
 class Post(db.Model):
     id: int = db.Column(db.Integer, primary_key=True)
+    external_reference: str = db.Column(db.String)
     title: str = db.Column(db.String)
     body: str = db.Column(db.String)
 
@@ -72,9 +73,9 @@ def seed():
     ann2 = Annotator(name="Rivas")
     ann3 = Annotator(name="Korn")
 
-    p1 = Post(body="body1", title="title1")
-    p2 = Post(body="body2", title="title2")
-    p3 = Post(body="body3", title="title3")
+    p1 = Post(body="body1", title="title1", external_reference="post1")
+    p2 = Post(body="body2", title="title2", external_reference="post2")
+    p3 = Post(body="body3", title="title3", external_reference="post3")
 
     annotation121 = Annotation()
     annotation121.annotator = ann1
