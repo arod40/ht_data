@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from dataclasses_json import dataclass_json
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Enum as SQLEnum

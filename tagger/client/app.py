@@ -4,6 +4,11 @@ import os
 import requests
 import streamlit as st
 
+backend_base = os.getenv("BACKEND_SERVER")
+print(f"Connected to server: {backend_base}")
+
+state = st.session_state
+
 
 def handle_go_prev():
     state.current_annotation_idx = (state.current_annotation_idx - 1) % len(
@@ -62,12 +67,6 @@ def get_color(annotation):
 
 
 st.title("Posts Similarity Tagger!!")
-
-# backend_base = os.getenv("BACKEND_SERVER")
-backend_base = "http://localhost:8080"
-print(f"Connected to server: {backend_base}")
-
-state = st.session_state
 
 # GET ANNOTATOR CREDENTIALS
 
