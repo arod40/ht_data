@@ -73,7 +73,51 @@ def seed():
     ann2 = Annotator(name="Rivas")
     ann3 = Annotator(name="Korn")
 
-    p1 = Post(body="body1", title="title1", external_reference="post1")
+    p1 = Post(
+        body="""
+😄body1body1body1body1body1body1\n
+body1body1body1body1body1body1body1body1body\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+😄body1body1body1body1body1body1\n
+body1body1body1body1body1body1body1body1body\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+😄body1body1body1body1body1body1\n
+body1body1body1body1body1body1body1body1body\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1\n
+1body1body1body1body1body1body1body1body1body1body1body1
+""",
+        title="title1",
+        external_reference="post1",
+    )
     p2 = Post(body="body2", title="title2", external_reference="post2")
     p3 = Post(body="body3", title="title3", external_reference="post3")
 
@@ -88,6 +132,11 @@ def seed():
     annotation231.left_post = p2
     annotation231.right_post = p3
     annotation231.value = SimilarityClass.dissimilar
+
+    annotation131 = Annotation()
+    annotation131.annotator = ann1
+    annotation131.left_post = p1
+    annotation131.right_post = p3
 
     annotation232 = Annotation()
     annotation232.annotator = ann2

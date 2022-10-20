@@ -1,11 +1,15 @@
 import json
 import os
+from turtle import onclick
 
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 
 backend_base = os.getenv("BACKEND_SERVER")
 print(f"Connected to server: {backend_base}")
+
+st.set_page_config(layout="wide")
 
 state = st.session_state
 
@@ -14,14 +18,12 @@ def handle_go_prev():
     state.current_annotation_idx = (state.current_annotation_idx - 1) % len(
         state.annotations
     )
-    state.selected_value = ""
 
 
 def handle_go_next():
     state.current_annotation_idx = (state.current_annotation_idx + 1) % len(
         state.annotations
     )
-    state.selected_value = ""
 
 
 def handle_submit():
@@ -62,30 +64,36 @@ def handle_change_annotator():
         state.init_annotator = True
 
 
+def handle_logout():
+    del state.annotations
+    del state.current_annotation_idx
+    del state.submitted
+    del state.init_annotator
+    del state.annotator_name
+
+
 def get_color(annotation):
     return "red" if annotation == "dissimilar" else "green"
 
 
-st.title("Posts Similarity Tagger!!")
-
 # GET ANNOTATOR CREDENTIALS
-
 if "init_app" not in state:
     state.annotators = requests.request("GET", f"{backend_base}/annotator").json()
     state.name2id = {ann["name"]: ann["id"] for ann in state.annotators}
     state.init_app = True
 
-st.selectbox(
-    label="What is your name?",
-    options=["select one..."] + [ann["name"] for ann in state.annotators],
-    key="annotator_name",
-    on_change=handle_change_annotator,
-)
-
+if "init_annotator" not in state:
+    st.title("Posts Similarity Tagger!!")
+    with st.sidebar:
+        st.selectbox(
+            label="What is your name?",
+            options=["select one..."] + [ann["name"] for ann in state.annotators],
+            key="annotator_name",
+            on_change=handle_change_annotator,
+        )
 # Annotation logic
-if "init_annotator" in state:
-
-    st.title(f"Welcome, {state.annotator_name}")
+else:
+    state.annotator_name = state.annotator_name
 
     col1, col2 = st.columns(2)
 
@@ -95,50 +103,48 @@ if "init_annotator" in state:
 
     with col1:
         st.header("Post 1")
-        st.text(annotation["left_post"]["body"])
+        components.html(
+            f"<pre style='color:white;'>{annotation['left_post']['body']}</pre>",
+            height=500,
+            scrolling=True,
+        )
 
     with col2:
         st.header("Post 2")
-        st.text(annotation["right_post"]["body"])
-
-    st.selectbox(
-        label="How do you consider these two posts are?",
-        options=["", "similar", "dissimilar"],
-        key="selected_value",
-    )
-
-    if not submitted:
-        st.markdown(":x: Not submitted yet")
-    else:
-        st.markdown(
-            f"Current annotation: <span style='color:{get_color(annotation['value'])}'>{annotation['value']}</span>",
-            unsafe_allow_html=True,
+        components.html(
+            f"<pre style='color:white;'>{annotation['right_post']['body']}</pre>",
+            height=500,
+            scrolling=True,
         )
 
-    butt1, butt2, butt3 = st.columns(3)
-    with butt1:
-        st.button(
-            "Previous",
-            on_click=handle_go_prev,
-            disabled=state.current_annotation_idx == 0,
-        )
-    with butt2:
-        st.button(
-            "Submit",
-            on_click=handle_submit,
-            disabled=state.selected_value == ""
-            or state.selected_value == annotation["value"],
-        )
-    with butt3:
-        st.button(
-            "Next",
-            on_click=handle_go_next,
-            disabled=state.current_annotation_idx == len(state.annotations) - 1,
-        )
+    with st.sidebar:
+        st.title(f"Welcome, {state.annotator_name}")
+        st.button("Logout", on_click=handle_logout)
+        if submitted:
+            options = ["similar", "dissimilar"]
+            index = 0 if annotation["value"] == "similar" else 1
+        else:
+            options = ["similar", "dissimilar", "not annotated yet"]
+            index = 2
 
-    if submitted and state.selected_value != annotation["value"]:
-        if state.selected_value != "":
-            st.markdown(
-                f":warning: Selected value <span style='color:{get_color(state.selected_value)}'>{state.selected_value}</span> is different from current annotated value <span style='color:{get_color(annotation['value'])}'>{annotation['value']}</span>. You need to submit if you want to persist the change.",
-                unsafe_allow_html=True,
+        st.radio(
+            label="How do you consider these two posts are?",
+            options=options,
+            index=index,
+            key="selected_value",
+            on_change=handle_submit,
+            horizontal=True,
+        )
+        butt1, butt2 = st.columns(2)
+        with butt1:
+            st.button(
+                "Previous",
+                on_click=handle_go_prev,
+                disabled=state.current_annotation_idx == 0,
+            )
+        with butt2:
+            st.button(
+                "Next",
+                on_click=handle_go_next,
+                disabled=state.current_annotation_idx == len(state.annotations) - 1,
             )
