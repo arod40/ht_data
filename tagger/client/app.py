@@ -46,20 +46,27 @@ def handle_submit():
 
 
 def handle_login():
-    # TODO: check credentials
     state.username = state.username_input
     state.password = state.password_input
 
-    state.annotations = requests.request(
-        "GET",
-        f"{backend_base}/annotator/{state.name2id[state.username]}/annotations",
+    valid_password = requests.request(
+        "POST",
+        f"{backend_base}/annotator/password/verify/{state.name2id[state.username]}?password={state.password}",
     ).json()
-    state.current_annotation_idx = 0
-    state.submitted = {
-        idx: state.annotations[idx].get("value") is not None
-        for idx in range(len(state.annotations))
-    }
-    state.init_annotator = True
+
+    if valid_password:
+        state.annotations = requests.request(
+            "GET",
+            f"{backend_base}/annotator/{state.name2id[state.username]}/annotations",
+        ).json()
+        state.current_annotation_idx = 0
+        state.submitted = {
+            idx: state.annotations[idx].get("value") is not None
+            for idx in range(len(state.annotations))
+        }
+        state.init_annotator = True
+    else:
+        st.error(body="Sorry. Wrong password. Please, try again.", icon="😬")
 
 
 def handle_logout():

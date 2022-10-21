@@ -252,6 +252,15 @@ def _annotators_set_password(annotator_id):
     return "Password updated sucessfully!"
 
 
+@app.route("/annotator/password/verify/<annotator_id>", methods=["POST"])
+def annotators_password_check(annotator_id):
+    return jsonify(
+        True
+        if request.args["password"] == Annotator.query.get(annotator_id).password
+        else False
+    )
+
+
 @app.route("/post", methods=["GET", "POST"], defaults={"post_id": None})
 @app.route("/post/<post_id>", methods=["GET", "PUT", "DELETE"])
 def posts(post_id=None):
