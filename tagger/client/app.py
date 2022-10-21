@@ -45,23 +45,21 @@ def handle_submit():
             annotation["value"] = state.selected_value
 
 
-def handle_change_annotator():
-    if state.annotator_name == "select one...":
-        del state.annotations
-        del state.current_annotation_idx
-        del state.submitted
-        del state.init_annotator
-    else:
-        state.annotations = requests.request(
-            "GET",
-            f"{backend_base}/annotator/{state.name2id[state.annotator_name]}/annotations",
-        ).json()
-        state.current_annotation_idx = 0
-        state.submitted = {
-            idx: state.annotations[idx].get("value") is not None
-            for idx in range(len(state.annotations))
-        }
-        state.init_annotator = True
+def handle_login():
+    # TODO: check credentials
+    state.username = state.username_input
+    state.password = state.password_input
+
+    state.annotations = requests.request(
+        "GET",
+        f"{backend_base}/annotator/{state.name2id[state.username]}/annotations",
+    ).json()
+    state.current_annotation_idx = 0
+    state.submitted = {
+        idx: state.annotations[idx].get("value") is not None
+        for idx in range(len(state.annotations))
+    }
+    state.init_annotator = True
 
 
 def handle_logout():
@@ -69,14 +67,14 @@ def handle_logout():
     del state.current_annotation_idx
     del state.submitted
     del state.init_annotator
-    del state.annotator_name
+    del state.username
+    del state.password
 
 
 def get_color(annotation):
     return "red" if annotation == "dissimilar" else "green"
 
 
-# GET ANNOTATOR CREDENTIALS
 if "init_app" not in state:
     state.annotators = requests.request("GET", f"{backend_base}/annotator").json()
     state.name2id = {ann["name"]: ann["id"] for ann in state.annotators}
@@ -85,16 +83,19 @@ if "init_app" not in state:
 if "init_annotator" not in state:
     st.title("Posts Similarity Tagger!!")
     with st.sidebar:
-        st.selectbox(
-            label="What is your name?",
-            options=["select one..."] + [ann["name"] for ann in state.annotators],
-            key="annotator_name",
-            on_change=handle_change_annotator,
+        st.text_input(
+            label="Username",
+            key="username_input",
+        )
+
+        st.text_input(label="Password", key="password_input", type="password")
+
+        st.button(
+            label="Login",
+            on_click=handle_login,
         )
 # Annotation logic
 else:
-    state.annotator_name = state.annotator_name
-
     col1, col2 = st.columns(2)
 
     idx = state.current_annotation_idx
@@ -118,7 +119,7 @@ else:
         )
 
     with st.sidebar:
-        st.title(f"Welcome, {state.annotator_name}")
+        st.title(f"Welcome, {state.username}")
         st.button("Logout", on_click=handle_logout)
         if submitted:
             options = ["similar", "dissimilar"]

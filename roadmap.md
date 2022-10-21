@@ -42,3 +42,8 @@ Evaluation FW:
 
 
 FIND TRANSFORMERS CHARBASED TRAINED ON LARGE VOCAB (EMOJIS, CHINESE, LATIN) ---> MULTILINGUAL??
+
+UTC: https://arxiv.org/abs/2202.11176
+Charformer: https://arxiv.org/abs/2106.12672
+Canine: https://arxiv.org/abs/2103.06874
+ByteT5: https://arxiv.org/abs/2105.13626
