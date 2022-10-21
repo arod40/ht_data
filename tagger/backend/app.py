@@ -33,6 +33,7 @@ class SimilarityClass(str, Enum):
 class Annotator(db.Model):
     id: int = db.Column(db.Integer, primary_key=True)
     name: str = db.Column(db.String)
+    password = db.Column(db.String)
     annotations = db.relationship("Annotation", back_populates="annotator")
 
 
@@ -69,9 +70,9 @@ db.init_app(app)
 
 
 def seed():
-    ann1 = Annotator(name="Alex")
-    ann2 = Annotator(name="Rivas")
-    ann3 = Annotator(name="Korn")
+    ann1 = Annotator(name="Alex", password="123")
+    ann2 = Annotator(name="Rivas", password="123")
+    ann3 = Annotator(name="Korn", password="123")
 
     p1 = Post(
         body="""
@@ -226,6 +227,29 @@ def _annotators_delete(annotator_id):
     db.session.commit()
 
     return "", 204
+
+
+@app.route("/annotator/password/<annotator_id>", methods=["GET", "POST"])
+def annotators_password(annotator_id):
+    if request.method == "GET":
+        return _annotators_get_password(annotator_id)
+    else:
+        return _annotators_set_password(annotator_id)
+
+
+def _annotators_get_password(annotator_id):
+    return jsonify(Annotator.query.get(annotator_id).password)
+
+
+def _annotators_set_password(annotator_id):
+    password = request.args["password"]
+    annotator = Annotator.query.get(annotator_id)
+    annotator.password = password
+
+    db.session.add_all([annotator])
+    db.session.commit()
+
+    return "Password updated sucessfully!"
 
 
 @app.route("/post", methods=["GET", "POST"], defaults={"post_id": None})
