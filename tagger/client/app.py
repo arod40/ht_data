@@ -42,7 +42,8 @@ def handle_submit():
         )
         if response.status_code == 200:
             state.submitted[idx] = True
-            annotation["value"] = state.selected_value
+            annotation["value"] = response.json()["value"]
+            annotation["date"] = response.json()["date"]
 
 
 def handle_login():
@@ -156,3 +157,5 @@ else:
                 on_click=handle_go_next,
                 disabled=state.current_annotation_idx == len(state.annotations) - 1,
             )
+        
+        st.text(annotation["date"])

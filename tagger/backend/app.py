@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import Enum as SQLEnum
 from enum import Enum
 import os
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -53,6 +54,7 @@ class Annotation(db.Model):
         db.Integer, db.ForeignKey("annotator.id"), primary_key=True
     )
     value: SimilarityClass = db.Column(SQLEnum(SimilarityClass))
+    date: datetime = db.Column(db.DateTime())
     left_post: Post = db.relationship(
         "Post",
         backref="annotations_as_left",
@@ -383,6 +385,7 @@ def _annotations_post():
         right_post_id=ann_json["right_post_id"],
         annotator_id=ann_json["annotator_id"],
         value=SimilarityClass[ann_json["value"]],
+        date=datetime.now(),
     )
 
     db.session.add_all([annotation])
@@ -395,6 +398,7 @@ def _annotations_put(left_post_id, right_post_id, annotator_id):
     ann_json = request.get_json()
     annotation = Annotation.query.get((left_post_id, right_post_id, annotator_id))
     annotation.value = SimilarityClass[ann_json["value"]]
+    annotation.date = datetime.now()
 
     db.session.add_all([annotation])
     db.session.commit()
