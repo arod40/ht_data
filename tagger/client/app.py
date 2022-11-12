@@ -112,19 +112,11 @@ else:
 
     with col1:
         st.header("Post 1")
-        components.html(
-            f"<pre style='color:white;'>{annotation['left_post']['body']}</pre>",
-            height=500,
-            scrolling=True,
-        )
+        st.write(annotation['left_post']['body'])
 
     with col2:
         st.header("Post 2")
-        components.html(
-            f"<pre style='color:white;'>{annotation['right_post']['body']}</pre>",
-            height=500,
-            scrolling=True,
-        )
+        st.write(annotation['right_post']['body'])
 
     with st.sidebar:
         st.title(f"Welcome, {state.username}")
@@ -158,4 +150,5 @@ else:
                 disabled=state.current_annotation_idx == len(state.annotations) - 1,
             )
         
+        st.text("Last edited:" if submitted else "Created at:")
         st.text(annotation["date"])

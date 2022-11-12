@@ -413,5 +413,39 @@ def _annotations_delete(left_post_id, right_post_id, annotator_id):
     return "", 204
 
 
+@app.route("/bulk_populate", methods=["POST"])
+def bulk_populate():
+    return _bulk_populate()
+
+
+def _bulk_populate():
+    data = request.get_json()
+    annotators = []
+    for annotator_json in data["annotators"]:
+        annotators.append(Annotator(name=annotator_json["name"], password=""))
+    posts = []
+    for post_json in data["posts"]:
+        posts.append(Post(title=post_json["title"], body=post_json["body"]))
+
+    db.session.add_all(posts + annotators)
+    db.session.commit()
+
+    annotations = []
+    for annotation_json in data["annotations"]:
+        annotation = Annotation(
+            left_post_id=posts[annotation_json["left_post_index"]].id,
+            right_post_id=posts[annotation_json["right_post_index"]].id,
+            annotator_id=annotators[annotation_json["annotator_index"]].id,
+            value=annotation_json.get("value", None),
+            date=datetime.now(),
+        )
+        annotations.append(annotation)
+
+    db.session.add_all(annotations)
+    db.session.commit()
+
+    return "All annotations added sucessfully", 201
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
