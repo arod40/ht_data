@@ -9,7 +9,7 @@ from scipy.stats import truncnorm
 from sortedcollections import SortedList
 from tqdm import tqdm
 from pathlib import Path
-from numpy.random import permutation
+from shuffle import lazy_shuffle
 
 FAKE = "FAKE_ANOTATOR"
 
@@ -41,7 +41,9 @@ def assign_annotators(commitment, overlap):
 
 def aggregate(samples, distances_dir):
     # assume the first row of the first batch is of the length of the matrix
-    triu_max = len(np.load(f"{distances_dir}/closest-{samples[0]}.npy").astype(np.float32)[0])
+    triu_max = len(
+        np.load(f"{distances_dir}/closest-{samples[0]}.npy").astype(np.float32)[0]
+    )
 
     # calculate size of triu matrix non-zero elems
     total_size = triu_max * (triu_max + 1) // 2
@@ -193,10 +195,11 @@ def create_assignments(
 
     # get sample from distribution of the sim values
     no_batches = len(list(Path(distances_dir).iterdir()))
-    data_points = permutation(aggregate(range(no_batches), distances_dir))
+    data_points = aggregate(range(no_batches))
+    data_points = (data_points[idx] for idx in lazy_shuffle(len(data_points)))
 
     # from itertools import product
-
+    # from numpy.random import permutation
     # data_points = permutation(
     #     list(
     #         zip(
