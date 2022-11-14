@@ -6,6 +6,10 @@ import numpy as np
 import requests
 from pandas import read_csv
 from scipy.stats import truncnorm
+from sortedcollections import SortedList
+from tqdm import tqdm
+from pathlib import Path
+from numpy.random import permutation
 
 FAKE = "FAKE_ANOTATOR"
 
@@ -35,32 +39,65 @@ def assign_annotators(commitment, overlap):
     return assignment, total_commitment
 
 
-# def get_truncated_gaussian_sample(
-#     low=0, up=1, mu=0.5, sigma=1, size=10000, plot=False, seed=None
-# ):
-#     mu, sigma = 0.5, 0.35
-#     low, up = 0, 1
+def aggregate(samples):
+    # assume the first row of the first batch is of the length of the matrix
+    triu_max = len(np.load(f"closests/closest-{samples[0]}.npy").astype(np.float32)[0])
 
-#     a, b = (low - mu) / sigma, (up - mu) / sigma
-#     sample = truncnorm.rvs(a, b, loc=mu, scale=sigma, size=size, random_state=seed)
+    # calculate size of triu matrix non-zero elems
+    total_size = triu_max * (triu_max + 1) // 2
+    distances = np.zeros((total_size,))
 
-#     if plot:
-#         x_range = np.linspace(low, up, 1000)
-#         plt.plot(x_range, truncnorm.pdf(x_range, a, b, loc=mu, scale=sigma))
-#         plt.hist(sample, bins=100, density=True)
-#         plt.show()
+    current = 0
+    i = 1
+    for idx in tqdm(samples):
+        batch = np.load(f"closests/closest-{idx}.npy").astype(np.float32)
+        for row in batch:
+            dist_triu_row = 1 - row[i:]
+            distances[current : current + len(dist_triu_row)] = dist_triu_row
+            current += len(dist_triu_row)
+            i += 1
+    return distances
 
-#     return sample
+
+def get_truncated_gaussian_sample(
+    low=0, up=1, mu=0.5, sigma=0.35, size=10000, plot=False, seed=None
+):
+    a, b = (low - mu) / sigma, (up - mu) / sigma
+    sample = truncnorm.rvs(a, b, loc=mu, scale=sigma, size=size, random_state=seed)
+
+    if plot:
+        x_range = np.linspace(low, up, 1000)
+        plt.plot(x_range, truncnorm.pdf(x_range, a, b, loc=mu, scale=sigma))
+        plt.hist(sample, bins=100, density=True)
+        plt.show()
+
+    return sample
 
 
-# def create_samples_by_batch(
-#     samples, batch_size=8
-# ):
-#     samples_by_batch = defaultdict(list)
-#     for i, j in samples:
-#         samples_by_batch[i // batch_size].append((i % batch_size, j))
+def find_closest(sample: SortedList, x, tol):
+    i = sample.bisect_left(x)
+    if i > 0 and (i == len(sample) or sample[i] - x >= x - sample[i - 1]):
+        i -= 1
+    if abs(sample[i] - x) < tol:
+        return i
+    else:
+        return -1
 
-#     return samples_by_batch
+
+def subsample_with_distribution(data_points, sample, tol=0.1):
+    sample = SortedList(sample)
+    values = []
+    ret_sample = []
+    for x, (i, j) in data_points:
+        if len(sample) == 0:
+            break
+        k = find_closest(sample, x, tol)
+        if k >= 0:
+            a = sample[k]
+            values.append(x)
+            ret_sample.append((i, j))
+            sample.remove(a)
+    return values, ret_sample
 
 
 def get_random_sample_from_triu(n, no_samples, diag=False):
@@ -88,6 +125,26 @@ def get_random_sample_from_triu(n, no_samples, diag=False):
     return posts, sample
 
 
+def get_random_sample_from_distribution(data_points, no_samples):
+    dist = get_truncated_gaussian_sample(size=no_samples, plot=True)
+    _, indices = subsample_with_distribution(data_points, dist)
+
+    sample = []
+    posts_control = {}
+    posts = []
+    for (i, j) in indices:
+        if i not in posts_control:
+            posts_control[i] = len(posts)
+            posts.append(i)
+        if j not in posts_control:
+            posts_control[j] = len(posts)
+            posts.append(j)
+
+        sample.append((posts_control[i], posts_control[j]))
+
+    return posts, sample
+
+
 def request_bulk_populate(
     host, bulk_annotation_post_endpoint, annotators, posts, annotations
 ):
@@ -102,7 +159,12 @@ def request_bulk_populate(
 
 
 def create_assignments(
-    annotators_csv_path, data_csv_path, overlap, host, bulk_annotation_post_endpoint
+    annotators_csv_path,
+    data_csv_path,
+    distances_dir,
+    overlap,
+    host,
+    bulk_annotation_post_endpoint,
 ):
     annotators_data = read_csv(annotators_csv_path)
     commitment = {
@@ -127,7 +189,27 @@ def create_assignments(
     bodies = data.post.to_numpy()
 
     # get random sample
-    posts_indices, sample = get_random_sample_from_triu(len(data), total_commitment)
+    # posts_indices, sample = get_random_sample_from_triu(len(data), total_commitment)
+
+    # get sample from distribution of the sim values
+    no_batches = len(list(Path(distances_dir).iterdir()))
+    data_points = permutation(aggregate(range(no_batches)))
+
+    # from itertools import product
+
+    # data_points = permutation(
+    #     list(
+    #         zip(
+    #             get_truncated_gaussian_sample(
+    #                 low=0, up=1, mu=0.1, sigma=0.5, size=10**6, plot=True
+    #             ),
+    #             product(range(10**3), range(10**3)),
+    #         )
+    #     )
+    # )
+    posts_indices, sample = get_random_sample_from_distribution(
+        data_points, total_commitment
+    )
 
     # for bulk populate
     posts = [{"title": titles[idx], "body": bodies[idx]} for idx in posts_indices]
@@ -149,5 +231,13 @@ def create_assignments(
         )
     )
 
+
 if __name__ == "__main__":
-    create_assignments("sample_annotators.csv", "../data/dataset.csv", 3, "http://localhost:8080", "/bulk_populate")
+    create_assignments(
+        "sample_annotators.csv",
+        "../data/dataset.csv",
+        "../data/closests",
+        3,
+        "http://localhost:8080",
+        "/bulk_populate",
+    )
