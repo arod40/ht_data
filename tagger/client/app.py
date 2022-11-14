@@ -41,6 +41,8 @@ def handle_submit():
             headers={"Content-Type": "application/json"},
         )
         if response.status_code == 200:
+            if not submitted:
+                state.total_submitted += 1
             state.submitted[idx] = True
             annotation["value"] = response.json()["value"]
             annotation["date"] = response.json()["date"]
@@ -65,6 +67,7 @@ def handle_login():
             idx: state.annotations[idx].get("value") is not None
             for idx in range(len(state.annotations))
         }
+        state.total_submitted = sum(state.submitted.values())
         state.init_annotator = True
     else:
         st.error(body="Sorry. Wrong password. Please, try again.", icon="😬")
@@ -104,19 +107,25 @@ if "init_annotator" not in state:
         )
 # Annotation logic
 else:
-    col1, col2 = st.columns(2)
-
     idx = state.current_annotation_idx
     annotation = state.annotations[idx]
     submitted = state.submitted[idx]
+    total_submitted = state.total_submitted
+    total_annotations = len(state.annotations)
+
+    st.text("Progress")
+    st.progress(total_submitted / total_annotations)
+    st.text(f"{total_submitted}/{total_annotations}")
+
+    col1, col2 = st.columns(2)
 
     with col1:
         st.header("Post 1")
-        st.write(annotation['left_post']['body'])
+        st.write(annotation["left_post"]["body"])
 
     with col2:
         st.header("Post 2")
-        st.write(annotation['right_post']['body'])
+        st.write(annotation["right_post"]["body"])
 
     with st.sidebar:
         st.title(f"Welcome, {state.username}")
@@ -149,6 +158,6 @@ else:
                 on_click=handle_go_next,
                 disabled=state.current_annotation_idx == len(state.annotations) - 1,
             )
-        
+
         st.text("Last edited:" if submitted else "Created at:")
         st.text(annotation["date"])
