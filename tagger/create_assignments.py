@@ -39,7 +39,9 @@ def assign_annotators(commitment, overlap):
     return assignment, total_commitment
 
 
-def aggregate(samples, distances_dir):
+def aggregate(distances_dir):
+    samples = range(len(list(Path(distances_dir).iterdir())))
+
     # assume the first row of the first batch is of the length of the matrix
     triu_max = len(
         np.load(f"{distances_dir}/closest-{samples[0]}.npy").astype(np.float32)[0]
@@ -194,8 +196,7 @@ def create_assignments(
     # posts_indices, sample = get_random_sample_from_triu(len(data), total_commitment)
 
     # get sample from distribution of the sim values
-    no_batches = len(list(Path(distances_dir).iterdir()))
-    data_points = aggregate(range(no_batches))
+    data_points = aggregate(distances_dir)
     data_points = (data_points[idx] for idx in lazy_shuffle(len(data_points)))
 
     # from itertools import product
