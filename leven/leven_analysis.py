@@ -17,19 +17,23 @@ def random_aggregate(no_samples):
 
 def aggregate(samples):
     # assume the first row of the first batch is of the length of the matrix
-    triu_max = len(np.load(f"closests/closest-{samples[0]}.npy").astype(np.float32)[0])
+    triu_max = len(np.load(f"closests/closest-{samples[0]}.npy").astype(np.float32)[0])-1
 
     # calculate size of triu matrix non-zero elems
     total_size = triu_max * (triu_max + 1) // 2
     distances = np.zeros((total_size,))
 
+    print(total_size)
+
     current = 0
+    i = 1
     for idx in tqdm(samples):
         batch = np.load(f"closests/closest-{idx}.npy").astype(np.float32)
-        for i, row in enumerate(batch):
+        for row in batch:
             dist_triu_row = 1 - row[i:]
             distances[current : current + len(dist_triu_row)] = dist_triu_row
             current += len(dist_triu_row)
+            i += 1
     return distances
 
 
