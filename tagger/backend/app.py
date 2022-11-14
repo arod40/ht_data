@@ -174,7 +174,9 @@ if os.getenv("ENV") == "dev":
         db.drop_all()
         db.create_all()
         seed()
-
+else:
+    with app.app_context():
+        db.create_all()
 
 # API
 
