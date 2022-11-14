@@ -39,9 +39,9 @@ def assign_annotators(commitment, overlap):
     return assignment, total_commitment
 
 
-def aggregate(samples):
+def aggregate(samples, distances_dir):
     # assume the first row of the first batch is of the length of the matrix
-    triu_max = len(np.load(f"closests/closest-{samples[0]}.npy").astype(np.float32)[0])
+    triu_max = len(np.load(f"{distances_dir}/closest-{samples[0]}.npy").astype(np.float32)[0])
 
     # calculate size of triu matrix non-zero elems
     total_size = triu_max * (triu_max + 1) // 2
@@ -50,7 +50,7 @@ def aggregate(samples):
     current = 0
     i = 1
     for idx in tqdm(samples):
-        batch = np.load(f"closests/closest-{idx}.npy").astype(np.float32)
+        batch = np.load(f"{distances_dir}/closest-{idx}.npy").astype(np.float32)
         for row in batch:
             dist_triu_row = 1 - row[i:]
             distances[current : current + len(dist_triu_row)] = dist_triu_row
@@ -193,7 +193,7 @@ def create_assignments(
 
     # get sample from distribution of the sim values
     no_batches = len(list(Path(distances_dir).iterdir()))
-    data_points = permutation(aggregate(range(no_batches)))
+    data_points = permutation(aggregate(range(no_batches), distances_dir))
 
     # from itertools import product
 
@@ -236,7 +236,7 @@ if __name__ == "__main__":
     create_assignments(
         "sample_annotators.csv",
         "../data/dataset.csv",
-        "../data/closests",
+        "../closests",
         3,
         "http://localhost:8080",
         "/bulk_populate",
