@@ -44,7 +44,7 @@ def aggregate(distances_dir):
 
     # assume the first row of the first batch is of the length of the matrix
     triu_max = len(
-        np.load(f"{distances_dir}/closest-{samples[0]}.npy").astype(np.float32)[0]-1
+        np.load(f"{distances_dir}/closest-{samples[0]}.npy").astype(np.float32)[0] - 1
     )
 
     # calculate size of triu matrix non-zero elems
@@ -62,12 +62,14 @@ def aggregate(distances_dir):
             i += 1
     return distances
 
+
 def triu_index_gen(n):
     k = 1
     for i in range(n):
-        for j in range(k,n):
-            yield i,j
+        for j in range(k, n):
+            yield i, j
         k += 1
+
 
 def lazy_shuffle_gen(l):
     return (l[idx] for idx in lazy_shuffle(len(l)))
@@ -187,9 +189,7 @@ def create_assignments(
 
     # for bulk populate
     annotators = [
-        {
-            "access_code": annotator.access_code
-        }
+        {"access_code": annotator.access_code}
         for _, annotator in annotators_data.iterrows()
     ]
 
@@ -210,11 +210,12 @@ def create_assignments(
 
     from itertools import product
     from numpy.random import permutation
+
     data_points = permutation(
         list(
             zip(
                 get_truncated_gaussian_sample(
-                    low=0, up=1, mu=0.1, sigma=0.5, size=10**6, plot=True
+                    low=0, up=1, mu=0.1, sigma=0.5, size=10**6, plot=False
                 ),
                 product(range(10**3), range(10**3)),
             )

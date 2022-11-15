@@ -50,10 +50,13 @@ def handle_submit():
 
 def handle_login():
     state.access_code = state.access_code_input
-    state.annotations = requests.request(
-        "GET",
-        f"{backend_base}/annotator/{state.access_code2id[state.access_code]}/annotations",
-    ).json()
+    state.annotations = sorted(
+        requests.request(
+            "GET",
+            f"{backend_base}/annotator/{state.access_code2id[state.access_code]}/annotations",
+        ).json(),
+        key=lambda x: x["left_post"]["body"],
+    )
     state.current_annotation_idx = 0
     state.submitted = {
         idx: state.annotations[idx].get("value") is not None
@@ -118,7 +121,6 @@ else:
     with col2:
         st.header("Post 2")
         st.write(annotation["right_post"]["body"])
-
     with st.sidebar:
         st.title(f"Welcome!")
         st.button("Logout", on_click=handle_logout)
