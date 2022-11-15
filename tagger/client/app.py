@@ -81,7 +81,12 @@ if "init_app" not in state:
     state.init_app = True
 
 if "init_annotator" not in state:
-    st.title("Posts Similarity Tagger!!")
+    st.title("Posts Similarity Tagger")
+    st.markdown(
+        f":warning: <span style='color:red'>Warning! The text you are about to read contains graphic language. Viewer discretion advised.</span>",
+        unsafe_allow_html=True,
+    )
+    st.subheader("")
     with st.sidebar:
         st.text_input(
             label="Access Code",
