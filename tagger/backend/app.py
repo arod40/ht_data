@@ -33,8 +33,8 @@ class SimilarityClass(str, Enum):
 @dataclass
 class Annotator(db.Model):
     id: int = db.Column(db.Integer, primary_key=True)
-    name: str = db.Column(db.String)
-    password = db.Column(db.String)
+    access_code: str = db.Column(db.String, unique=True)
+    password = db.Column(db.String, unique=True)
     annotations = db.relationship("Annotation", back_populates="annotator")
 
 
@@ -72,9 +72,9 @@ db.init_app(app)
 
 
 def seed():
-    ann1 = Annotator(name="Alex", password="123")
-    ann2 = Annotator(name="Rivas", password="123")
-    ann3 = Annotator(name="Korn", password="123")
+    ann1 = Annotator(access_code="1", password="1")
+    ann2 = Annotator(access_code="2", password="2")
+    ann3 = Annotator(access_code="3", password="3")
 
     p1 = Post(
         body="""
@@ -207,7 +207,7 @@ def _annotators_get(annotator_id):
 
 def _annotators_post():
     ann_json = request.get_json()
-    annotator = Annotator(name=ann_json["name"])
+    annotator = Annotator(access_code=ann_json["access_code"])
 
     db.session.add_all([annotator])
     db.session.commit()
@@ -218,7 +218,7 @@ def _annotators_post():
 def _annotators_put(annotator_id):
     ann_json = request.get_json()
     annotator = Annotator.query.get(annotator_id)
-    annotator.name = ann_json["name"]
+    annotator.access_code = ann_json["access_code"]
 
     db.session.add_all([annotator])
     db.session.commit()
@@ -424,7 +424,9 @@ def _bulk_populate():
     data = request.get_json()
     annotators = []
     for annotator_json in data["annotators"]:
-        annotators.append(Annotator(name=annotator_json["name"], password=""))
+        annotators.append(
+            Annotator(access_code=annotator_json["access_code"], password="")
+        )
     posts = []
     for post_json in data["posts"]:
         posts.append(Post(title=post_json["title"], body=post_json["body"]))

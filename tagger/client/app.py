@@ -49,18 +49,18 @@ def handle_submit():
 
 
 def handle_login():
-    state.username = state.username_input
+    state.access_code = state.access_code_input
     state.password = state.password_input
 
     valid_password = requests.request(
         "POST",
-        f"{backend_base}/annotator/password/verify/{state.name2id[state.username]}?password={state.password}",
+        f"{backend_base}/annotator/password/verify/{state.access_code2id[state.access_code]}?password={state.password}",
     ).json()
 
     if valid_password:
         state.annotations = requests.request(
             "GET",
-            f"{backend_base}/annotator/{state.name2id[state.username]}/annotations",
+            f"{backend_base}/annotator/{state.access_code2id[state.access_code]}/annotations",
         ).json()
         state.current_annotation_idx = 0
         state.submitted = {
@@ -78,7 +78,7 @@ def handle_logout():
     del state.current_annotation_idx
     del state.submitted
     del state.init_annotator
-    del state.username
+    del state.access_code
     del state.password
 
 
@@ -88,15 +88,15 @@ def get_color(annotation):
 
 if "init_app" not in state:
     state.annotators = requests.request("GET", f"{backend_base}/annotator").json()
-    state.name2id = {ann["name"]: ann["id"] for ann in state.annotators}
+    state.access_code2id = {ann["access_code"]: ann["id"] for ann in state.annotators}
     state.init_app = True
 
 if "init_annotator" not in state:
     st.title("Posts Similarity Tagger!!")
     with st.sidebar:
         st.text_input(
-            label="Username",
-            key="username_input",
+            label="Access Code",
+            key="access_code_input",
         )
 
         st.text_input(label="Password", key="password_input", type="password")
@@ -128,7 +128,7 @@ else:
         st.write(annotation["right_post"]["body"])
 
     with st.sidebar:
-        st.title(f"Welcome, {state.username}")
+        st.title(f"Welcome, {state.access_code}")
         st.button("Logout", on_click=handle_logout)
         if submitted:
             options = ["similar", "dissimilar"]
