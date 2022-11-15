@@ -50,27 +50,17 @@ def handle_submit():
 
 def handle_login():
     state.access_code = state.access_code_input
-    state.password = state.password_input
-
-    valid_password = requests.request(
-        "POST",
-        f"{backend_base}/annotator/password/verify/{state.access_code2id[state.access_code]}?password={state.password}",
+    state.annotations = requests.request(
+        "GET",
+        f"{backend_base}/annotator/{state.access_code2id[state.access_code]}/annotations",
     ).json()
-
-    if valid_password:
-        state.annotations = requests.request(
-            "GET",
-            f"{backend_base}/annotator/{state.access_code2id[state.access_code]}/annotations",
-        ).json()
-        state.current_annotation_idx = 0
-        state.submitted = {
-            idx: state.annotations[idx].get("value") is not None
-            for idx in range(len(state.annotations))
-        }
-        state.total_submitted = sum(state.submitted.values())
-        state.init_annotator = True
-    else:
-        st.error(body="Sorry. Wrong password. Please, try again.", icon="😬")
+    state.current_annotation_idx = 0
+    state.submitted = {
+        idx: state.annotations[idx].get("value") is not None
+        for idx in range(len(state.annotations))
+    }
+    state.total_submitted = sum(state.submitted.values())
+    state.init_annotator = True
 
 
 def handle_logout():
@@ -79,7 +69,6 @@ def handle_logout():
     del state.submitted
     del state.init_annotator
     del state.access_code
-    del state.password
 
 
 def get_color(annotation):
@@ -98,8 +87,6 @@ if "init_annotator" not in state:
             label="Access Code",
             key="access_code_input",
         )
-
-        st.text_input(label="Password", key="password_input", type="password")
 
         st.button(
             label="Login",
@@ -128,7 +115,7 @@ else:
         st.write(annotation["right_post"]["body"])
 
     with st.sidebar:
-        st.title(f"Welcome, {state.access_code}")
+        st.title(f"Welcome!")
         st.button("Logout", on_click=handle_logout)
         if submitted:
             options = ["similar", "dissimilar"]

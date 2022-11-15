@@ -34,7 +34,6 @@ class SimilarityClass(str, Enum):
 class Annotator(db.Model):
     id: int = db.Column(db.Integer, primary_key=True)
     access_code: str = db.Column(db.String, unique=True)
-    password = db.Column(db.String, unique=True)
     annotations = db.relationship("Annotation", back_populates="annotator")
 
 
@@ -72,9 +71,9 @@ db.init_app(app)
 
 
 def seed():
-    ann1 = Annotator(access_code="1", password="1")
-    ann2 = Annotator(access_code="2", password="2")
-    ann3 = Annotator(access_code="3", password="3")
+    ann1 = Annotator(access_code="1")
+    ann2 = Annotator(access_code="2")
+    ann3 = Annotator(access_code="3")
 
     p1 = Post(
         body="""
@@ -231,38 +230,6 @@ def _annotators_delete(annotator_id):
     db.session.commit()
 
     return "", 204
-
-
-@app.route("/annotator/password/<annotator_id>", methods=["GET", "POST"])
-def annotators_password(annotator_id):
-    if request.method == "GET":
-        return _annotators_get_password(annotator_id)
-    else:
-        return _annotators_set_password(annotator_id)
-
-
-def _annotators_get_password(annotator_id):
-    return jsonify(Annotator.query.get(annotator_id).password)
-
-
-def _annotators_set_password(annotator_id):
-    password = request.args["password"]
-    annotator = Annotator.query.get(annotator_id)
-    annotator.password = password
-
-    db.session.add_all([annotator])
-    db.session.commit()
-
-    return "Password updated sucessfully!"
-
-
-@app.route("/annotator/password/verify/<annotator_id>", methods=["POST"])
-def annotators_password_check(annotator_id):
-    return jsonify(
-        True
-        if request.args["password"] == Annotator.query.get(annotator_id).password
-        else False
-    )
 
 
 @app.route("/post", methods=["GET", "POST"], defaults={"post_id": None})
@@ -425,7 +392,7 @@ def _bulk_populate():
     annotators = []
     for annotator_json in data["annotators"]:
         annotators.append(
-            Annotator(access_code=annotator_json["access_code"], password="")
+            Annotator(access_code=annotator_json["access_code"])
         )
     posts = []
     for post_json in data["posts"]:
