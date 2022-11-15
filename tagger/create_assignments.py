@@ -44,7 +44,7 @@ def aggregate(distances_dir):
 
     # assume the first row of the first batch is of the length of the matrix
     triu_max = len(
-        np.load(f"{distances_dir}/closest-{samples[0]}.npy").astype(np.float32)[0]
+        np.load(f"{distances_dir}/closest-{samples[0]}.npy").astype(np.float32)[0]-1
     )
 
     # calculate size of triu matrix non-zero elems
@@ -61,6 +61,16 @@ def aggregate(distances_dir):
             current += len(dist_triu_row)
             i += 1
     return distances
+
+def triu_index_gen(n):
+    k = 1
+    for i in range(n):
+        for j in range(k,n):
+            yield i,j
+        k += 1
+
+def lazy_shuffle_gen(l):
+    return (l[idx] for idx in lazy_shuffle(len(l)))
 
 
 def get_truncated_gaussian_sample(
@@ -130,13 +140,13 @@ def get_random_sample_from_triu(n, no_samples, diag=False):
 
 
 def get_random_sample_from_distribution(data_points, no_samples):
-    dist = get_truncated_gaussian_sample(size=no_samples, plot=True)
+    dist = get_truncated_gaussian_sample(size=no_samples, plot=False)
     _, indices = subsample_with_distribution(data_points, dist)
 
     sample = []
     posts_control = {}
     posts = []
-    for (i, j) in indices:
+    for (i, j) in tqdm(indices):
         if i not in posts_control:
             posts_control[i] = len(posts)
             posts.append(i)
@@ -197,7 +207,7 @@ def create_assignments(
 
     # get sample from distribution of the sim values
     data_points = aggregate(distances_dir)
-    data_points = (data_points[idx] for idx in lazy_shuffle(len(data_points)))
+    data_points = lazy_shuffle_gen(zip(data_points, triu_index_gen(len(data))))
 
     # from itertools import product
     # from numpy.random import permutation
