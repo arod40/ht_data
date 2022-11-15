@@ -188,8 +188,7 @@ def create_assignments(
     # for bulk populate
     annotators = [
         {
-            "name": annotator.email,
-            "password": "",
+            "access_code": annotator.access_code
         }
         for _, annotator in annotators_data.iterrows()
     ]
@@ -206,21 +205,21 @@ def create_assignments(
     # posts_indices, sample = get_random_sample_from_triu(len(data), total_commitment)
 
     # get sample from distribution of the sim values
-    data_points = aggregate(distances_dir)
-    data_points = lazy_shuffle_gen(zip(data_points, triu_index_gen(len(data))))
+    # data_points = aggregate(distances_dir)
+    # data_points = zip(lazy_shuffle_gen(data_points), triu_index_gen(len(data)))
 
-    # from itertools import product
-    # from numpy.random import permutation
-    # data_points = permutation(
-    #     list(
-    #         zip(
-    #             get_truncated_gaussian_sample(
-    #                 low=0, up=1, mu=0.1, sigma=0.5, size=10**6, plot=True
-    #             ),
-    #             product(range(10**3), range(10**3)),
-    #         )
-    #     )
-    # )
+    from itertools import product
+    from numpy.random import permutation
+    data_points = permutation(
+        list(
+            zip(
+                get_truncated_gaussian_sample(
+                    low=0, up=1, mu=0.1, sigma=0.5, size=10**6, plot=True
+                ),
+                product(range(10**3), range(10**3)),
+            )
+        )
+    )
     posts_indices, sample = get_random_sample_from_distribution(
         data_points, total_commitment
     )
