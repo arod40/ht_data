@@ -155,3 +155,4 @@ else:
 
         st.text("Last edited:" if submitted else "Created at:")
         st.text(annotation["date"])
+        st.text(annotation["leven_sim"])

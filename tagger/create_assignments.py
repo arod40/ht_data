@@ -44,23 +44,24 @@ def aggregate(distances_dir):
     samples = range(len(list(Path(distances_dir).iterdir())))
 
     # assume the first row of the first batch is of the length of the matrix
-    triu_max = len(
+    tril_max = len(
         np.load(f"{distances_dir}/closest-{samples[0]}.npy").astype(np.float32)[0] - 1
     )
 
     # calculate size of triu matrix non-zero elems
-    total_size = triu_max * (triu_max + 1) // 2
+    total_size = tril_max * (tril_max + 1) // 2
     distances = np.zeros((total_size,))
 
     current = 0
-    i = 1
+    i = 0
     for idx in tqdm(samples):
         batch = np.load(f"{distances_dir}/closest-{idx}.npy").astype(np.float32)
         for row in batch:
-            dist_triu_row = 1 - row[i:]
+            dist_triu_row = 1 - row[:i]
             distances[current : current + len(dist_triu_row)] = dist_triu_row
             current += len(dist_triu_row)
             i += 1
+    assert current == len(distances)
     return distances
 
 
@@ -138,12 +139,12 @@ def get_random_sample_from_distribution(data_points, dist="trunc_gaussian", **kw
     distributions = {"trunc_gaussian": get_truncated_gaussian_sample}
 
     dist = distributions[dist](**kwargs)
-    _, indices = subsample_with_distribution(data_points, dist)
+    values, indices = subsample_with_distribution(data_points, dist)
 
     sample = []
     posts_control = {}
     posts = []
-    for (i, j) in tqdm(indices):
+    for sim, (i, j) in tqdm(list(zip(values, indices))):
         if i not in posts_control:
             posts_control[i] = len(posts)
             posts.append(i)
@@ -151,7 +152,7 @@ def get_random_sample_from_distribution(data_points, dist="trunc_gaussian", **kw
             posts_control[j] = len(posts)
             posts.append(j)
 
-        sample.append((posts_control[i], posts_control[j]))
+        sample.append((posts_control[i], posts_control[j], sim))
 
     return posts, sample
 
@@ -192,6 +193,8 @@ def create_assignments(
     # create assignments
     assignments, total_commitment = assign_annotators(commitment, overlap)
 
+    assert total_commitment % overlap == 0
+
     # load posts data
     data = read_csv(data_csv_path).dropna()
     titles = data.title.to_numpy()
@@ -200,31 +203,18 @@ def create_assignments(
     if dist == "random":
         # get random sample
         print("Generating random sample.")
-        posts_indices, sample = get_random_sample_from_triu(len(data), total_commitment)
+        posts_indices, sample = get_random_sample_from_triu(len(data), total_commitment // overlap)
     else:
         # get sample from distribution of the sim values
-        print(f"Generating sample from distirbution: '{dist}'.")
+        print(f"Generating sample from distribution: '{dist}'.")
         data_points = aggregate(distances_dir)
         data_points = lazy_shuffle_two_sequences(
-            data_points, TriL(len(data), diag=False)
+            data_points, TriL(diag=False)
         )
-
-        # from itertools import product
-        # from numpy.random import permutation
-
-        # data_points = permutation(
-        #     list(
-        #         zip(
-        #             get_truncated_gaussian_sample(
-        #                 low=0, up=1, mu=0.1, sigma=0.5, size=10**6, plot=False
-        #             ),
-        #             product(range(10**3), range(10**3)),
-        #         )
-        #     )
-        # )
         posts_indices, sample = get_random_sample_from_distribution(
-            data_points, "trunc_gaussian", size=total_commitment, plot=False
+            data_points, "trunc_gaussian", size=total_commitment // overlap, plot=True
         )
+    print(sorted([x for _,_,x in sample]))
 
     # for bulk populate
     posts = [
@@ -238,6 +228,7 @@ def create_assignments(
             "left_post_index": sample[sample_idx][0],
             "right_post_index": sample[sample_idx][1],
             "annotator_index": annotator_idx,
+            "leven_sim":  sample[sample_idx][2],
         }
         for annotator_idx, assignment in assignments.items()
         for sample_idx in assignment
@@ -258,5 +249,5 @@ if __name__ == "__main__":
         3,
         "http://localhost:8080",
         "/bulk_populate",
-        dist="random",
+        dist="trunc_gaussian",
     )

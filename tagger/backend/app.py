@@ -52,6 +52,7 @@ class Annotation(db.Model):
     annotator_id = db.Column(
         db.Integer, db.ForeignKey("annotator.id"), primary_key=True
     )
+    leven_sim: float = db.Column(db.Float)
     value: SimilarityClass = db.Column(SQLEnum(SimilarityClass))
     date: datetime = db.Column(db.DateTime())
     left_post: Post = db.relationship(
@@ -420,6 +421,7 @@ def _bulk_populate():
             left_post_id=posts[annotation_json["left_post_index"]].id,
             right_post_id=posts[annotation_json["right_post_index"]].id,
             annotator_id=annotators[annotation_json["annotator_index"]].id,
+            leven_sim=annotation_json["leven_sim"],
             value=annotation_json.get("value", None),
             date=datetime.now(),
         )
@@ -430,6 +432,12 @@ def _bulk_populate():
 
     return "All annotations added sucessfully", 201
 
+
+@app.route("/clean_db", methods=["GET"])
+def clean_db():
+    db.drop_all()
+    db.create_all()
+    return "Cleaned"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
