@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from random import randint, shuffle
 
 import matplotlib.pyplot as plt
@@ -6,10 +7,10 @@ import numpy as np
 import requests
 from pandas import read_csv
 from scipy.stats import truncnorm
+from shuffle import lazy_shuffle
 from sortedcollections import SortedList
 from tqdm import tqdm
-from pathlib import Path
-from shuffle import lazy_shuffle
+from tri import TriL
 
 FAKE = "FAKE_ANOTATOR"
 
@@ -63,16 +64,8 @@ def aggregate(distances_dir):
     return distances
 
 
-def triu_index_gen(n):
-    k = 1
-    for i in range(n):
-        for j in range(k, n):
-            yield i, j
-        k += 1
-
-
-def lazy_shuffle_gen(l):
-    return (l[idx] for idx in lazy_shuffle(len(l)))
+def lazy_shuffle_two_sequences(l1, l2):
+    return ((l1[idx], l2[idx]) for idx in lazy_shuffle(len(l1)))
 
 
 def get_truncated_gaussian_sample(
@@ -206,9 +199,10 @@ def create_assignments(
 
     # get sample from distribution of the sim values
     # data_points = aggregate(distances_dir)
-    # data_points = zip(lazy_shuffle_gen(data_points), triu_index_gen(len(data)))
+    # data_points = lazy_shuffle_two_sequences(data_points, TriL(len(data), diag=False))
 
     from itertools import product
+
     from numpy.random import permutation
 
     data_points = permutation(
