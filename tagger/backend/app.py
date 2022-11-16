@@ -254,7 +254,11 @@ def _posts_get(post_id):
 
 def _posts_post():
     ann_json = request.get_json()
-    post = Post(body=ann_json["body"], title=ann_json["title"])
+    post = Post(
+        body=ann_json["body"],
+        title=ann_json["title"],
+        external_reference=ann_json["external_reference"],
+    )
 
     db.session.add_all([post])
     db.session.commit()
@@ -290,7 +294,11 @@ def _posts_bulk_create():
     posts_json_list = request.get_json()
     posts = []
     for post_json in posts_json_list:
-        post = Post(body=post_json["body"], title=post_json["title"])
+        post = Post(
+            body=post_json["body"],
+            title=post_json["title"],
+            external_reference=post_json["external_reference"],
+        )
         posts.append(post)
 
     db.session.add_all(posts)
@@ -392,12 +400,16 @@ def _bulk_populate():
     data = request.get_json()
     annotators = []
     for annotator_json in data["annotators"]:
-        annotators.append(
-            Annotator(access_code=annotator_json["access_code"])
-        )
+        annotators.append(Annotator(access_code=annotator_json["access_code"]))
     posts = []
     for post_json in data["posts"]:
-        posts.append(Post(title=post_json["title"], body=post_json["body"]))
+        posts.append(
+            Post(
+                title=post_json["title"],
+                body=post_json["body"],
+                external_reference=post_json["external_reference"],
+            )
+        )
 
     db.session.add_all(posts + annotators)
     db.session.commit()

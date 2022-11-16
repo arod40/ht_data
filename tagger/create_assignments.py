@@ -226,7 +226,10 @@ def create_assignments(
     )
 
     # for bulk populate
-    posts = [{"title": titles[idx], "body": bodies[idx]} for idx in posts_indices]
+    posts = [
+        {"title": titles[idx], "body": bodies[idx], "external_reference": idx}
+        for idx in posts_indices
+    ]
 
     # for bulk populate
     annotations = [
