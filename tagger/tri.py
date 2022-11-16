@@ -1,23 +1,8 @@
-from bisect import bisect_right
-
-
-class tril:
-    def __init__(self, n, diag=False):
-        self.n = n
-        self.diag = diag
-
-    def __len__(self):
-        return self.n
-
-    def __getitem__(self, i):
-        if self.diag:
-            i += 1
-        return i * (i + 1) // 2
+from math import floor, sqrt
 
 
 class TriL:
-    def __init__(self, n, diag=False):
-        self.n = n
+    def __init__(self, diag=False):
         self.diag = diag
 
     # O(1) solution to convert i,j into flatten indices of the lower triangular matrix
@@ -28,18 +13,18 @@ class TriL:
             raise Exception("Wrong indices for lower triangular matrix!")
         return i * (i - 1) / 2 + j
 
-    # O(log n) solution to convert idx into i,j indices of an nxn matrix
+    # O(1) solution to convert idx into i,j indices of an nxn matrix
     # into the flatten idx of its lower triangular matrix
-    def _tril_idx_to_ij(self, idx, n, diag=False):
-        i = bisect_right(tril(n, diag=diag), idx)
-        i0 = i + (1 if diag else 0)
-        j = idx - i0 * (i0 - 1) // 2 
+    # BY KORN!!
+    def _tril_idx_to_ij(self, idx, diag=False):
+        i = floor((-1 + sqrt(1 + 8 * idx)) / 2) + (0 if diag else 1)
+        j = idx - i * (i - 1) // 2
 
         return i, j
 
     def __getitem__(self, idx):
         if isinstance(idx, int):
-            return self._tril_idx_to_ij(idx, self.n, diag=self.diag)
+            return self._tril_idx_to_ij(idx, diag=self.diag)
         elif isinstance(idx, tuple) and len(tuple) == 2:
             return self._tril_ij_to_idx(**idx, diag=self.diag)
         else:

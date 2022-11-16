@@ -134,8 +134,10 @@ def get_random_sample_from_triu(n, no_samples, diag=False):
     return posts, sample
 
 
-def get_random_sample_from_distribution(data_points, no_samples):
-    dist = get_truncated_gaussian_sample(size=no_samples, plot=False)
+def get_random_sample_from_distribution(data_points, dist="trunc_gaussian", **kwargs):
+    distributions = {"trunc_gaussian": get_truncated_gaussian_sample}
+
+    dist = distributions[dist](**kwargs)
     _, indices = subsample_with_distribution(data_points, dist)
 
     sample = []
@@ -174,6 +176,7 @@ def create_assignments(
     overlap,
     host,
     bulk_annotation_post_endpoint,
+    dist="random",
 ):
     annotators_data = read_csv(annotators_csv_path)
     commitment = {
@@ -194,30 +197,34 @@ def create_assignments(
     titles = data.title.to_numpy()
     bodies = data.post.to_numpy()
 
-    # get random sample
-    # posts_indices, sample = get_random_sample_from_triu(len(data), total_commitment)
-
-    # get sample from distribution of the sim values
-    # data_points = aggregate(distances_dir)
-    # data_points = lazy_shuffle_two_sequences(data_points, TriL(len(data), diag=False))
-
-    from itertools import product
-
-    from numpy.random import permutation
-
-    data_points = permutation(
-        list(
-            zip(
-                get_truncated_gaussian_sample(
-                    low=0, up=1, mu=0.1, sigma=0.5, size=10**6, plot=False
-                ),
-                product(range(10**3), range(10**3)),
-            )
+    if dist == "random":
+        # get random sample
+        print("Generating random sample.")
+        posts_indices, sample = get_random_sample_from_triu(len(data), total_commitment)
+    else:
+        # get sample from distribution of the sim values
+        print(f"Generating sample from distirbution: '{dist}'.")
+        data_points = aggregate(distances_dir)
+        data_points = lazy_shuffle_two_sequences(
+            data_points, TriL(len(data), diag=False)
         )
-    )
-    posts_indices, sample = get_random_sample_from_distribution(
-        data_points, total_commitment
-    )
+
+        # from itertools import product
+        # from numpy.random import permutation
+
+        # data_points = permutation(
+        #     list(
+        #         zip(
+        #             get_truncated_gaussian_sample(
+        #                 low=0, up=1, mu=0.1, sigma=0.5, size=10**6, plot=False
+        #             ),
+        #             product(range(10**3), range(10**3)),
+        #         )
+        #     )
+        # )
+        posts_indices, sample = get_random_sample_from_distribution(
+            data_points, "trunc_gaussian", size=total_commitment, plot=False
+        )
 
     # for bulk populate
     posts = [
@@ -251,4 +258,5 @@ if __name__ == "__main__":
         3,
         "http://localhost:8080",
         "/bulk_populate",
+        dist="random",
     )
