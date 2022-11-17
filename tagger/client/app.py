@@ -64,6 +64,7 @@ def handle_login():
     }
     state.total_submitted = sum(state.submitted.values())
     state.init_annotator = True
+    print("Logged in sucessfully")
 
 
 def handle_logout():
@@ -87,6 +88,7 @@ if "init_app" not in state:
     print(state.annotators)
 
 if "init_annotator" not in state:
+    print("Need to log in...")
     st.title("Posts Similarity Tagger")
     st.markdown(
         f":warning: <span style='color:red'>Warning! The text you are about to read contains graphic language. Viewer discretion advised.</span>",
