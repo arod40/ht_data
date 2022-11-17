@@ -82,6 +82,8 @@ if "init_app" not in state:
     state.annotators = requests.request("GET", f"{backend_base}/annotator").json()
     state.access_code2id = {ann["access_code"]: ann["id"] for ann in state.annotators}
     state.init_app = True
+    print("App initialized")
+    print(state.annotators)
 
 if "init_annotator" not in state:
     st.title("Posts Similarity Tagger")
