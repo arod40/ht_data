@@ -176,7 +176,6 @@ if os.getenv("ENV") == "dev":
         seed()
 else:
     with app.app_context():
-        db.drop_all()
         db.create_all()
 
 # API
@@ -438,6 +437,7 @@ def clean_db():
     db.drop_all()
     db.create_all()
     return "Cleaned"
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
