@@ -160,4 +160,5 @@ else:
 
         st.text("Last edited:" if submitted else "Created at:")
         st.text(annotation["date"])
-        st.text(annotation["leven_sim"])
+        if os.getenv("ENV") == "dev":
+            st.text(annotation["leven_sim"])
