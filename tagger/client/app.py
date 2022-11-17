@@ -79,6 +79,7 @@ def get_color(annotation):
 
 
 if "init_app" not in state:
+    print("Initializing App...")
     state.annotators = requests.request("GET", f"{backend_base}/annotator").json()
     state.access_code2id = {ann["access_code"]: ann["id"] for ann in state.annotators}
     state.init_app = True
