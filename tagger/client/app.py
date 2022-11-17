@@ -1,10 +1,8 @@
 import json
 import os
-from turtle import onclick
 
 import requests
 import streamlit as st
-import streamlit.components.v1 as components
 
 backend_base = os.getenv("BACKEND_SERVER")
 print(f"Connected to server: {backend_base}")
