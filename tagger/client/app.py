@@ -11,6 +11,17 @@ st.set_page_config(layout="wide")
 
 state = st.session_state
 
+st.markdown(
+    """
+<style>
+p {
+    font-size:20px !important;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
 
 def handle_go_prev():
     state.current_annotation_idx = (state.current_annotation_idx - 1) % len(
@@ -124,6 +135,7 @@ else:
     with col2:
         st.header("Post 2")
         st.write(annotation["right_post"]["body"])
+
     with st.sidebar:
         st.title(f"Welcome!")
         st.button("Logout", on_click=handle_logout)
