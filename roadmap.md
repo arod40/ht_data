@@ -47,3 +47,12 @@ UTC: https://arxiv.org/abs/2202.11176
 Charformer: https://arxiv.org/abs/2106.12672
 Canine: https://arxiv.org/abs/2103.06874
 ByteT5: https://arxiv.org/abs/2105.13626
+
+
+SET-FIT for sent class
+
+1-Run leven on new data
+2-Set up code for receiving the weights and compute clusters with weighted graphs (community detection)
+3-Create post pairing dataset
+    -Positive example: Two post with different text (i.e. sim <= threshold) and belonging to the same community
+    -Negative example: Pairs of posts from different communities

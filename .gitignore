@@ -4,5 +4,5 @@ closests
 *.ipynb
 *.png
 .env
-*components
+*results
 *.csv
