@@ -38,3 +38,12 @@ class SnapchatUsernameExtractor(Extractor):
 
 class UrlExtractor(Extractor):
     regex = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
+
+
+class TimeExtractor(Extractor):
+    def extract(self, string: str):
+        return [string.split("on")[0].strip()]
+
+class DateExtractor(Extractor):
+    def extract(self, string: str):
+        return [string.split("on")[1].strip()]

@@ -1,12 +1,7 @@
-from operator import index
 from parse_post import *
-import pandas as pd
 from pandas import read_csv
 from tqdm import tqdm
-
-file = "data/dataset.csv"
-
-df = read_csv(file, index_col=[0])
+from sys import argv
 
 def extract_from_series(posts, extractor):
     elems = []
@@ -23,20 +18,32 @@ def extract_from_series(posts, extractor):
             raise e
     return elems
 
-# phone numbers
-df = df.assign(phone_numbers=lambda df: extract_from_series(df.post, RegexPhoneNumberExtractor()))
+if __name__ == "__main__":
 
-# emails
-df = df.assign(emails=lambda df: extract_from_series(df.post, EmailExtractor()))
+    file_data = argv[1]
+    dump_to = argv[2]
 
-# snapchat
-df = df.assign(snapchat_users=lambda df: extract_from_series(df.post, SnapchatUsernameExtractor()))
+    df = read_csv(file_data, index_col=[0])
 
-# instagram
-df = df.assign(insta_users=lambda df: extract_from_series(df.post, InstagramUsernameExtractor()))
+    # phone numbers
+    df = df.assign(phone_numbers=lambda df: extract_from_series(df.post, RegexPhoneNumberExtractor()))
 
-# url
-df = df.assign(urls=lambda df: extract_from_series(df.post, UrlExtractor()))
+    # emails
+    df = df.assign(emails=lambda df: extract_from_series(df.post, EmailExtractor()))
 
+    # snapchat
+    df = df.assign(snapchat_users=lambda df: extract_from_series(df.post, SnapchatUsernameExtractor()))
 
-df.to_csv("data/dataset_ext.csv")
+    # instagram
+    df = df.assign(insta_users=lambda df: extract_from_series(df.post, InstagramUsernameExtractor()))
+
+    # url
+    df = df.assign(urls=lambda df: extract_from_series(df.post, UrlExtractor()))
+
+    # time
+    df = df.assign(time=lambda df: extract_from_series(df.date, TimeExtractor()))
+
+    # date
+    df = df.assign(date=lambda df: extract_from_series(df.date, DateExtractor()))
+
+    df.to_csv(dump_to)
