@@ -14,13 +14,21 @@ WITH
     AS url
 LOAD CSV WITH HEADERS FROM url AS row
 // WITH row LIMIT 5000
-MERGE (post:Post {index: row.index})
+MERGE (post:Post {index: coalesce(row.index, 1)}) // this shouldn't be necessary. check any index=1 after loading
 MERGE (title:Text {string: coalesce(row.title, "")})
 MERGE (body:Text {string:coalesce(row.post, "")})
 MERGE (post)-[:HAS_TITLE]->(title)
 MERGE (post)-[:HAS_BODY]->(body)
 MERGE (title)-[:IS_IN_POST{as: "title"}]->(post)
 MERGE (body)-[:IS_IN_POST{as: "body"}]->(post)
+// DATE
+MERGE (date:Date {date: row.date})
+MERGE (post)-[:DATE]->(date)
+MERGE (date)-[:IS_IN_POST{as :"date"}]->(post)
+// TIME
+MERGE (time:Time {time: row.time})
+MERGE (post)-[:TIME]->(time)
+MERGE (time)-[:IS_IN_POST{as :"time"}]->(post)
 // PICTURES
 FOREACH (npy IN split(row.pictures, " ") |
  MERGE (picture:Picture {npy: npy})
