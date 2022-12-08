@@ -47,3 +47,7 @@ class TimeExtractor(Extractor):
 class DateExtractor(Extractor):
     def extract(self, string: str):
         return [string.split("on")[1].strip()]
+
+class RegionExtractor(Extractor):
+    def extract(self, string: str):
+        return [string.split("\n")[0].strip()]

@@ -29,6 +29,10 @@ MERGE (date)-[:IS_IN_POST{as :"date"}]->(post)
 MERGE (time:Time {time: row.time})
 MERGE (post)-[:TIME]->(time)
 MERGE (time)-[:IS_IN_POST{as :"time"}]->(post)
+// REGION
+MERGE (region:Region {region: coalesce(row.region, "")})
+MERGE (post)-[:REGION]->(region)
+MERGE (region)-[:IS_IN_POST{as :"region"}]->(post)
 // PICTURES
 FOREACH (npy IN split(row.pictures, " ") |
  MERGE (picture:Picture {npy: npy})

@@ -46,4 +46,7 @@ if __name__ == "__main__":
     # date
     df = df.assign(date=lambda df: extract_from_series(df.date, DateExtractor()))
 
+    # date
+    df = df.assign(region=lambda df: extract_from_series(df.region, RegionExtractor()))
+
     df.to_csv(dump_to)
