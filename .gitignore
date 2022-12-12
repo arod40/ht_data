@@ -6,3 +6,4 @@ closests
 .env
 *results
 *.csv
+tagger/assignments

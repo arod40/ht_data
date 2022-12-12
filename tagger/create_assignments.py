@@ -171,68 +171,91 @@ def request_bulk_populate(
 
 
 def create_assignments(
-    annotators_csv_path,
-    data_csv_path,
-    distances_dir,
-    overlap,
     host,
     bulk_annotation_post_endpoint,
+    annotators_csv_path=None,
+    data_csv_path=None,
+    distances_dir=None,
+    overlap=3,
     dist="random",
+    save_to=None,
+    load_from=None,
 ):
-    annotators_data = read_csv(annotators_csv_path)
-    commitment = {
-        idx: annotator.commitment for idx, annotator in annotators_data.iterrows()
-    }
+    assert load_from is not None or None not in [
+        annotators_csv_path,
+        data_csv_path,
+        distances_dir,
+    ], "Arguments missing"
 
-    # for bulk populate
-    annotators = [
-        {"access_code": annotator.access_code}
-        for _, annotator in annotators_data.iterrows()
-    ]
-
-    # create assignments
-    assignments, total_commitment = assign_annotators(commitment, overlap)
-
-    assert total_commitment % overlap == 0
-
-    # load posts data
-    data = read_csv(data_csv_path).dropna()
-    titles = data.title.to_numpy()
-    bodies = data.post.to_numpy()
-
-    if dist == "random":
-        # get random sample
-        print("Generating random sample.")
-        posts_indices, sample = get_random_sample_from_triu(
-            len(data), total_commitment // overlap
-        )
-    else:
-        # get sample from distribution of the sim values
-        print(f"Generating sample from distribution: '{dist}'.")
-        data_points = aggregate(distances_dir)
-        data_points = lazy_shuffle_two_sequences(data_points, TriL(diag=False))
-        posts_indices, sample = get_random_sample_from_distribution(
-            data_points, "trunc_gaussian", size=total_commitment // overlap, plot=True
-        )
-    print(sorted([x for _, _, x in sample]))
-
-    # for bulk populate
-    posts = [
-        {"title": titles[idx], "body": bodies[idx], "external_reference": idx}
-        for idx in posts_indices
-    ]
-
-    # for bulk populate
-    annotations = [
-        {
-            "left_post_index": sample[sample_idx][0],
-            "right_post_index": sample[sample_idx][1],
-            "annotator_index": annotator_idx,
-            "leven_sim": sample[sample_idx][2],
+    if load_from is None:
+        annotators_data = read_csv(annotators_csv_path)
+        commitment = {
+            idx: annotator.commitment for idx, annotator in annotators_data.iterrows()
         }
-        for annotator_idx, assignment in assignments.items()
-        for sample_idx in assignment
-    ]
+
+        # for bulk populate
+        annotators = [
+            {"access_code": annotator.access_code}
+            for _, annotator in annotators_data.iterrows()
+        ]
+
+        # create assignments
+        assignments, total_commitment = assign_annotators(commitment, overlap)
+
+        assert total_commitment % overlap == 0
+
+        # load posts data
+        data = read_csv(data_csv_path).dropna()
+        titles = data.title.to_numpy()
+        bodies = data.post.to_numpy()
+
+        if dist == "random":
+            # get random sample
+            print("Generating random sample.")
+            posts_indices, sample = get_random_sample_from_triu(
+                len(data), total_commitment // overlap
+            )
+        else:
+            # get sample from distribution of the sim values
+            print(f"Generating sample from distribution: '{dist}'.")
+            data_points = aggregate(distances_dir)
+            data_points = lazy_shuffle_two_sequences(data_points, TriL(diag=False))
+            posts_indices, sample = get_random_sample_from_distribution(
+                data_points,
+                "trunc_gaussian",
+                size=total_commitment // overlap,
+                plot=True,
+            )
+        print(sorted([x for _, _, x in sample]))
+
+        # for bulk populate
+        posts = [
+            {"title": titles[idx], "body": bodies[idx], "external_reference": idx}
+            for idx in posts_indices
+        ]
+
+        # for bulk populate
+        annotations = [
+            {
+                "left_post_index": sample[sample_idx][0],
+                "right_post_index": sample[sample_idx][1],
+                "annotator_index": annotator_idx,
+                "leven_sim": sample[sample_idx][2],
+            }
+            for annotator_idx, assignment in assignments.items()
+            for sample_idx in assignment
+        ]
+
+        if save_to is not None:
+            save_to = Path(save_to)
+            (save_to / "annotations.json").write_text(json.dumps(annotations))
+            (save_to / "annotators.json").write_text(json.dumps(annotators))
+            (save_to / "posts.json").write_text(json.dumps(posts))
+
+    else:
+        annotations = json.loads((Path(load_from) / "annotations.json").read_text())
+        annotators = json.loads((Path(load_from) / "annotators.json").read_text())
+        posts = json.loads((Path(load_from) / "posts.json").read_text())
 
     print(
         request_bulk_populate(
@@ -243,11 +266,12 @@ def create_assignments(
 
 if __name__ == "__main__":
     create_assignments(
-        "as_is_phase.csv",
-        "../data/150k/dataset.csv",
-        "../closests",
-        3,
-        "http://3.138.226.155",
-        "/bulk_populate",
+        host="http://3.138.226.155:8080",
+        bulk_annotation_post_endpoint="/bulk_populate",
+        annotators_csv_path="as_is_phase.csv",
+        data_csv_path="../data/150k/dataset.csv",
+        distances_dir="../closests",
+        overlap=3,
         dist="trunc_gaussian",
+        save_to="./assignments/as_is",
     )
