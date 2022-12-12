@@ -3,7 +3,7 @@
 CALL gds.graph.project.cypher(
   'posts_connections',
   'MATCH (n:Post) RETURN id(n) AS id',
-  'MATCH (n1:Post)-[]->(x)<-[]-(n2:Post) RETURN id(n1) AS source, id(n2) AS target')
+  'MATCH (n1:Post)-[]->(x WHERE x:Text OR x:Email OR x:Picture OR x:Url OR x:PhoneNumber OR x:SocialMediaAccount OR x:Url)<-[]-(n2:Post) RETURN id(n1) AS source, id(n2) AS target')
 YIELD
   graphName AS graph, nodeQuery, nodeCount AS nodes, relationshipQuery, relationshipCount AS rels, projectMillis as timeMilli
 
