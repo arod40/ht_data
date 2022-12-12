@@ -40,6 +40,22 @@ def assign_annotators(commitment, overlap):
     return assignment, total_commitment
 
 
+def assign_with_batches(commitment, no_batches, batch_size):
+    total_commitment = no_batches * batch_size
+
+    batch2idxs = {
+        i
+        + 1: list(
+            zip(range(i * batch_size, (i + 1) * batch_size), [i + 1] * batch_size)
+        )
+        for i in range(no_batches)
+    }
+
+    assignment = {idx: batch2idxs[batch] for idx, batch in commitment.items()}
+
+    return assignment, total_commitment
+
+
 def aggregate(distances_dir):
     samples = range(len(list(Path(distances_dir).iterdir())))
 
@@ -226,7 +242,7 @@ def create_assignments(
                 size=total_commitment // overlap,
                 plot=True,
             )
-        print(sorted([x for _, _, x in sample]))
+            print(sorted([x for _, _, x in sample]))
 
         # for bulk populate
         posts = [
@@ -240,7 +256,9 @@ def create_assignments(
                 "left_post_index": sample[sample_idx][0],
                 "right_post_index": sample[sample_idx][1],
                 "annotator_index": annotator_idx,
-                "leven_sim": sample[sample_idx][2],
+                "leven_sim": sample[sample_idx][2]
+                if len(sample[sample_idx]) > 2
+                else None,
             }
             for annotator_idx, assignment in assignments.items()
             for sample_idx in assignment
@@ -264,14 +282,131 @@ def create_assignments(
     )
 
 
+def create_assignments_by_batches(
+    host,
+    bulk_annotation_post_endpoint,
+    no_batches=None,
+    batch_size=None,
+    annotators_csv_path=None,
+    data_csv_path=None,
+    distances_dir=None,
+    dist="random",
+    save_to=None,
+    load_from=None,
+):
+    assert load_from is not None or None not in [
+        no_batches,
+        batch_size,
+        annotators_csv_path,
+        data_csv_path,
+        distances_dir,
+    ], "Arguments missing"
+
+    if load_from is None:
+        annotators_data = read_csv(annotators_csv_path)
+        commitment = {
+            idx: annotator.batch for idx, annotator in annotators_data.iterrows()
+        }
+
+        # for bulk populate
+        annotators = [
+            {"access_code": annotator.access_code}
+            for _, annotator in annotators_data.iterrows()
+        ]
+
+        # create assignments
+        assignments, total_commitment = assign_with_batches(
+            commitment, no_batches, batch_size
+        )
+
+        # load posts data
+        data = read_csv(data_csv_path).dropna()
+        titles = data.title.to_numpy()
+        bodies = data.post.to_numpy()
+
+        if dist == "random":
+            # get random sample
+            print("Generating random sample.")
+            posts_indices, sample = get_random_sample_from_triu(
+                len(data), total_commitment
+            )
+        else:
+            # get sample from distribution of the sim values
+            print(f"Generating sample from distribution: '{dist}'.")
+            data_points = aggregate(distances_dir)
+            data_points = lazy_shuffle_two_sequences(data_points, TriL(diag=False))
+            posts_indices, sample = get_random_sample_from_distribution(
+                data_points,
+                "trunc_gaussian",
+                size=total_commitment,
+                plot=True,
+            )
+            print(sorted([x for _, _, x in sample]))
+
+        # for bulk populate
+        posts = [
+            {
+                "title": titles[idx],
+                "body": bodies[idx],
+                "external_reference": idx,
+            }
+            for idx in posts_indices
+        ]
+
+        # for bulk populate
+        annotations = [
+            {
+                "left_post_index": sample[sample_idx][0],
+                "right_post_index": sample[sample_idx][1],
+                "annotator_index": annotator_idx,
+                "leven_sim": sample[sample_idx][2]
+                if len(sample[sample_idx]) > 2
+                else None,
+                "batch": batch,
+            }
+            for annotator_idx, assignment in assignments.items()
+            for sample_idx, batch in assignment
+        ]
+
+        if save_to is not None:
+            save_to = Path(save_to)
+            (save_to / "annotations.json").write_text(json.dumps(annotations))
+            (save_to / "annotators.json").write_text(json.dumps(annotators))
+            (save_to / "posts.json").write_text(json.dumps(posts))
+
+    else:
+        annotations = json.loads((Path(load_from) / "annotations.json").read_text())
+        annotators = json.loads((Path(load_from) / "annotators.json").read_text())
+        posts = json.loads((Path(load_from) / "posts.json").read_text())
+
+    print(
+        request_bulk_populate(
+            host, bulk_annotation_post_endpoint, annotators, posts, annotations
+        )
+    )
+
+
 if __name__ == "__main__":
-    create_assignments(
-        host="http://3.138.226.155:8080",
+    # create_assignments(
+    #     host="http://3.138.226.155:8080",
+    #     bulk_annotation_post_endpoint="/bulk_populate",
+    #     annotators_csv_path="assignments/batch_mapping.csv",
+    #     data_csv_path="../data/150k/dataset.csv",
+    #     distances_dir="../closests",
+    #     overlap=3,
+    #     dist="trunc_gaussian",
+    #     save_to="./assignments/as_is",
+    # )
+
+    create_assignments_by_batches(
+        # host="http://3.138.226.155:8080",
+        host="http://localhost:8080",
         bulk_annotation_post_endpoint="/bulk_populate",
-        annotators_csv_path="as_is_phase.csv",
+        annotators_csv_path="assignments/batch_mapping.csv",
         data_csv_path="../data/150k/dataset.csv",
         distances_dir="../closests",
-        overlap=3,
+        no_batches=50,
+        batch_size=50,
         dist="trunc_gaussian",
-        save_to="./assignments/as_is",
+        save_to="./assignments",
     )

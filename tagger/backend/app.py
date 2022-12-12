@@ -52,6 +52,7 @@ class Annotation(db.Model):
     annotator_id = db.Column(
         db.Integer, db.ForeignKey("annotator.id"), primary_key=True
     )
+    batch: int = db.Column(db.Integer)
     leven_sim: float = db.Column(db.Float)
     value: SimilarityClass = db.Column(SQLEnum(SimilarityClass))
     date: datetime = db.Column(db.DateTime())
@@ -422,6 +423,7 @@ def _bulk_populate():
             annotator_id=annotators[annotation_json["annotator_index"]].id,
             leven_sim=annotation_json["leven_sim"],
             value=annotation_json.get("value", None),
+            batch=annotation_json.get("batch", None),
             date=datetime.now(),
         )
         annotations.append(annotation)
