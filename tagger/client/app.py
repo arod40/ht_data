@@ -59,7 +59,7 @@ def handle_submit():
 
 def handle_login():
     if state.access_code_input in state.access_code2id:
-        state.error = None
+        del state.error
         state.access_code = state.access_code_input
         state.annotations = sorted(
             requests.request(
@@ -119,7 +119,7 @@ if "init_annotator" not in state:
             on_click=handle_login,
         )
 
-        if state.error is not None:
+        if "error" in state:
             st.markdown(
                 f":warning: <span style='color:red'>{state.error}</span>",
                 unsafe_allow_html=True,
