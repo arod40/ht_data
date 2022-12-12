@@ -59,7 +59,8 @@ def handle_submit():
 
 def handle_login():
     if state.access_code_input in state.access_code2id:
-        del state.error
+        if "error" in state:
+            del state.error
         state.access_code = state.access_code_input
         state.annotations = sorted(
             requests.request(
