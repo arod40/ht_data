@@ -78,7 +78,7 @@ def handle_login():
         state.init_annotator = True
         print("Logged in sucessfully")
     else:
-        state.error = "Access code not found. If problem persist, contact supervisor."
+        state.error = "Access code not found. Please, try again. If problem persists, contact supervisor."
 
 
 def handle_logout():
