@@ -58,22 +58,26 @@ def handle_submit():
 
 
 def handle_login():
-    state.access_code = state.access_code_input
-    state.annotations = sorted(
-        requests.request(
-            "GET",
-            f"{backend_base}/annotator/{state.access_code2id[state.access_code]}/annotations",
-        ).json(),
-        key=lambda x: x["left_post"]["body"],
-    )
-    state.current_annotation_idx = 0
-    state.submitted = {
-        idx: state.annotations[idx].get("value") is not None
-        for idx in range(len(state.annotations))
-    }
-    state.total_submitted = sum(state.submitted.values())
-    state.init_annotator = True
-    print("Logged in sucessfully")
+    if state.access_code_input in state.access_code2id:
+        state.error = None
+        state.access_code = state.access_code_input
+        state.annotations = sorted(
+            requests.request(
+                "GET",
+                f"{backend_base}/annotator/{state.access_code2id[state.access_code]}/annotations",
+            ).json(),
+            key=lambda x: x["left_post"]["body"],
+        )
+        state.current_annotation_idx = 0
+        state.submitted = {
+            idx: state.annotations[idx].get("value") is not None
+            for idx in range(len(state.annotations))
+        }
+        state.total_submitted = sum(state.submitted.values())
+        state.init_annotator = True
+        print("Logged in sucessfully")
+    else:
+        state.error = "Access code not found. If problem persist, contact supervisor."
 
 
 def handle_logout():
@@ -114,6 +118,12 @@ if "init_annotator" not in state:
             label="Login",
             on_click=handle_login,
         )
+
+        if state.error is not None:
+            st.markdown(
+                f":warning: <span style='color:red'>{state.error}</span>",
+                unsafe_allow_html=True,
+            )
 # Annotation logic
 else:
     idx = state.current_annotation_idx
