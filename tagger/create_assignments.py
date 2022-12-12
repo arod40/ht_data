@@ -203,18 +203,18 @@ def create_assignments(
     if dist == "random":
         # get random sample
         print("Generating random sample.")
-        posts_indices, sample = get_random_sample_from_triu(len(data), total_commitment // overlap)
+        posts_indices, sample = get_random_sample_from_triu(
+            len(data), total_commitment // overlap
+        )
     else:
         # get sample from distribution of the sim values
         print(f"Generating sample from distribution: '{dist}'.")
         data_points = aggregate(distances_dir)
-        data_points = lazy_shuffle_two_sequences(
-            data_points, TriL(diag=False)
-        )
+        data_points = lazy_shuffle_two_sequences(data_points, TriL(diag=False))
         posts_indices, sample = get_random_sample_from_distribution(
             data_points, "trunc_gaussian", size=total_commitment // overlap, plot=True
         )
-    print(sorted([x for _,_,x in sample]))
+    print(sorted([x for _, _, x in sample]))
 
     # for bulk populate
     posts = [
@@ -228,7 +228,7 @@ def create_assignments(
             "left_post_index": sample[sample_idx][0],
             "right_post_index": sample[sample_idx][1],
             "annotator_index": annotator_idx,
-            "leven_sim":  sample[sample_idx][2],
+            "leven_sim": sample[sample_idx][2],
         }
         for annotator_idx, assignment in assignments.items()
         for sample_idx in assignment
@@ -243,11 +243,11 @@ def create_assignments(
 
 if __name__ == "__main__":
     create_assignments(
-        "sample_annotators.csv",
-        "../data/dataset.csv",
+        "as_is_phase.csv",
+        "../data/150k/dataset.csv",
         "../closests",
         3,
-        "http://localhost:8080",
+        "http://3.138.226.155",
         "/bulk_populate",
         dist="trunc_gaussian",
     )
