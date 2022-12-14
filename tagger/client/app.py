@@ -158,7 +158,7 @@ else:
             index = 2
 
         st.radio(
-            label="How do you consider these two posts are?",
+            label="How would you rate these two posts?",
             options=options,
             index=index,
             key="selected_value",
