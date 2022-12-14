@@ -133,9 +133,23 @@ else:
     total_submitted = state.total_submitted
     total_annotations = len(state.annotations)
 
-    st.text("Progress")
-    st.progress(total_submitted / total_annotations)
-    st.text(f"{total_submitted}/{total_annotations}")
+    if total_submitted == total_annotations:
+        st.markdown(
+            f":warning: <span style='color:green;text-align:center'> The coding activity is complete.</span>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"<p style='text-align:center'>Please take a few minutes to provide us with some feedback on your experience.<br/>This link will take you out of the coding application to an online survey with five questions.<br/>Your experience will help us to improve the research protocols:<br/><a href=https://www.surveymonkey.com/r/AI_Tagfeedback><span style='color:blue'>https://www.surveymonkey.com/r/AI_Tagfeedback</span></a></p>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"<p style='text-align:center'>Thank you for helping to develop an AI to detect human trafficking.</p>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.text("Progress")
+        st.progress(total_submitted / total_annotations)
+        st.text(f"{total_submitted}/{total_annotations}")
 
     col1, col2 = st.columns(2)
 
