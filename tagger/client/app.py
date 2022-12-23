@@ -69,11 +69,12 @@ def handle_login():
             ).json(),
             key=lambda x: x["left_post"]["body"],
         )
-        state.current_annotation_idx = 0
         state.submitted = {
             idx: state.annotations[idx].get("value") is not None
             for idx in range(len(state.annotations))
         }
+        notyet = [idx for idx, isdone in state.submitted.items() if not isdone]
+        state.current_annotation_idx = min(notyet) if len(notyet) > 0 else 0
         state.total_submitted = sum(state.submitted.values())
         state.init_annotator = True
         print("Logged in sucessfully")
