@@ -4,13 +4,15 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 from pathlib import Path
 
-data = read_csv("query.csv").to_numpy()
+exp_dir = Path("350kdata-cc")
+
+data = read_csv(exp_dir / "query.csv").to_numpy()
 
 G = nx.Graph()
 G.add_edges_from(data)
 
 for i, component in tqdm(list(enumerate(nx.connected_components(G)))):
-    size_folder = Path(f'results/components/{len(component)}')
+    size_folder = exp_dir / f'results/components/{len(component)}'
     if not size_folder.exists():
         size_folder.mkdir()
 
