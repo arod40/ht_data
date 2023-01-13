@@ -73,9 +73,9 @@ db.init_app(app)
 
 
 def seed():
-    ann1 = Annotator(access_code="1")
-    ann2 = Annotator(access_code="2")
-    ann3 = Annotator(access_code="3")
+    ann1 = Annotator(access_code="U1")
+    ann2 = Annotator(access_code="T2")
+    ann3 = Annotator(access_code="R3")
 
     p1 = Post(
         body="""

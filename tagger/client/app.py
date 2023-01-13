@@ -30,16 +30,28 @@ def emojis_to_text(text):
 
 def emojis_to_utf(text):
     emojis = emoji.distinct_emoji_list(text)
-    for emoji in emojis:
-        text = text.replace(emoji, "U+{:X}".format(ord(emoji)))
+    for moji in emojis:
+        text = text.replace(moji, "U+{:X}".format(ord(moji)))
     return text
 
 
 def remove_emojis(text):
     emojis = emoji.distinct_emoji_list(text)
-    for emoji in emojis:
-        text = text.replace(emoji, "")
+    for moji in emojis:
+        text = text.replace(moji, "")
     return text
+
+
+def get_text_to_render(orig_text):
+    user_code = state.access_code[0]
+    if user_code == "U":
+        return emojis_to_utf(orig_text)
+    elif user_code == "T":
+        return emojis_to_text(orig_text)
+    elif user_code == "R":
+        return remove_emojis(orig_text)
+    else:
+        return orig_text
 
 
 def handle_go_prev():
@@ -175,11 +187,11 @@ else:
 
     with col1:
         st.header("Post 1")
-        st.write(annotation["left_post"]["body"])
+        st.write(get_text_to_render(annotation["left_post"]["body"]))
 
     with col2:
         st.header("Post 2")
-        st.write(annotation["right_post"]["body"])
+        st.write(get_text_to_render(annotation["right_post"]["body"]))
 
     with st.sidebar:
         st.title(f"Welcome!")
