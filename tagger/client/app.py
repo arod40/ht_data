@@ -31,7 +31,8 @@ def emojis_to_text(text):
 def emojis_to_utf(text):
     emojis = emoji.distinct_emoji_list(text)
     for moji in emojis:
-        text = text.replace(moji, "U+{:X}".format(ord(moji)))
+        for moji_char in moji:
+            text = text.replace(moji, "U+{:X}".format(ord(moji_char)))
     return text
 
 
