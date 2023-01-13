@@ -3,7 +3,7 @@ from itertools import product
 from geopy.distance import geodesic
 
 
-def phone_number_heuristic(subgraph, data_df, graph2index, threshold=1):
+def phone_number_heuristic(subgraph, data_df, graph2index, threshold=2):
     cc_nodes = subgraph.nodes
     cc_phone_numbers = set()
     for node_id in cc_nodes:
@@ -11,7 +11,7 @@ def phone_number_heuristic(subgraph, data_df, graph2index, threshold=1):
             data_df["index"] == graph2index[node_id]
         ].phone_numbers.dropna():
             cc_phone_numbers.add(pn)
-    return len(cc_phone_numbers) > threshold
+    return len(cc_phone_numbers) >= threshold
 
 
 def tracks_heuristics(
@@ -21,14 +21,14 @@ def tracks_heuristics(
     for node_id1, node_id2 in product(cc_nodes, cc_nodes):
         if node_id1 == node_id2:
             continue
-        region1 = data_df.loc[data_df["index"] == graph2index[node_id1]].region
-        region2 = data_df.loc[data_df["index"] == graph2index[node_id2]].region
+        region1 = data_df.loc[data_df["index"] == graph2index[node_id1]].region.values[0]
+        region2 = data_df.loc[data_df["index"] == graph2index[node_id2]].region.values[0]
         if region1 is None or region2 is None:
             continue
 
         geo1 = places_df.loc[places_df["place"] == region1].geolocation
         geo2 = places_df.loc[places_df["place"] == region2].geolocation
 
-        if geodesic(geo1, geo2).miles < distance_threshold_mi:
+        if geodesic(geo1, geo2).miles > distance_threshold_mi:
             return True
     return False
