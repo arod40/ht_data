@@ -25,7 +25,12 @@ p {
 
 
 def emojis_to_text(text):
-    return emoji.demojize(text)
+    emojis = emoji.distinct_emoji_list(text)
+    for moji in emojis:
+        text = text.replace(
+            moji, f" {emoji.EMOJI_DATA[moji]['en'][1:-1]}"
+        )  # stripping off the colons so that streamlit won't render them as emojis
+    return text
 
 
 def emojis_to_utf(text):
