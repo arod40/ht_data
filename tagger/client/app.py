@@ -1,6 +1,7 @@
 import json
 import os
 
+import emoji
 import requests
 import streamlit as st
 
@@ -21,6 +22,24 @@ p {
 """,
     unsafe_allow_html=True,
 )
+
+
+def emojis_to_text(text):
+    return emoji.demojize(text)
+
+
+def emojis_to_utf(text):
+    emojis = emoji.distinct_emoji_list(text)
+    for emoji in emojis:
+        text = text.replace(emoji, "U+{:X}".format(ord(emoji)))
+    return text
+
+
+def remove_emojis(text):
+    emojis = emoji.distinct_emoji_list(text)
+    for emoji in emojis:
+        text = text.replace(emoji, "")
+    return text
 
 
 def handle_go_prev():
